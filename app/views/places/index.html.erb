@@ -1,0 +1,15 @@
+<% provide :head_tags do %>
+    <script>
+    document.addEventListener("DOMContentLoaded", function(){
+      var lat = <%=@places.first.latitude %> 
+      var lng = <%=@places.first.longitude %> 
+        initMap(lat, lng)
+    });
+    </script>
+<% end %>
+
+<h1>Route</h1>
+<p>This is our route</p>
+<p>
+    <div id="map"></div>
+</p>
