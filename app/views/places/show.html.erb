@@ -1,9 +1,8 @@
 <% provide :head_tags do %>
     <script>
     document.addEventListener("DOMContentLoaded", function(){
-    	var lat = <%=@places.first.latitude %> 
-    	var lng = <%=@places.first.longitude %> 
-        initMap(lat, lng)
+        var lastPositions = <%= last_positions_js %>]
+        initMap(lastPositions);
     });
     </script>
 <% end %>

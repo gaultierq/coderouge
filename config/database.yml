@@ -12,6 +12,17 @@ default: &default
 development:
   <<: *default
   database: db/development_db
+  username: <%= Rails.application.credentials.dig(:postgres, :username, :development) %>
+  password: <%= Rails.application.credentials.dig(:postgres, :password, :development) %>
+  database: <%= Rails.application.credentials.dig(:postgres, :database, :development) %>
+
+
+production:
+  <<: *default
+  username: <%= Rails.application.credentials.dig(:postgres, :username, :production) %>
+  password: <%= Rails.application.credentials.dig(:postgres, :password, :production) %>
+  database: <%= Rails.application.credentials.dig(:postgres, :database, :production) %>
+
 
 # Warning: The database defined as "test" will be erased and
 # re-generated from your development database when you run "rake".
@@ -19,7 +30,3 @@ development:
 test:
   <<: *default
   database: db/test_db
-
-production:
-  <<: *default
-  database: db/production_db
