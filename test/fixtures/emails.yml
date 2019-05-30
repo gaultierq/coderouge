@@ -1,0 +1,15 @@
+# Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  message_id: MyString
+  subject: MyString
+  body: MyText
+  from: MyString
+  date: 2019-05-30 12:57:49
+
+two:
+  message_id: MyString
+  subject: MyString
+  body: MyText
+  from: MyString
+  date: 2019-05-30 12:57:49
