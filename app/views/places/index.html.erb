@@ -1,9 +1,0 @@
-<% provide :head_tags do %>
-    <script>
-    document.addEventListener("DOMContentLoaded", function(){
-        initMap(<%= @places.to_json.html_safe %>);
-    });
-    </script>
-<% end %>
-
-<div id="map"></div>

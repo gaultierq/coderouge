@@ -1,11 +1,13 @@
 # Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
 one:
-  name: MyString
   latitude: 9.99
   longitude: 9.99
+  logbook: MyText
+  date: 2019-05-30 16:25:12
 
 two:
-  name: MyString
   latitude: 9.99
   longitude: 9.99
+  logbook: MyText
+  date: 2019-05-30 16:25:12
