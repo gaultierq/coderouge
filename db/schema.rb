@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2019_05_30_142512) do
+ActiveRecord::Schema.define(version: 2019_05_30_214704) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -27,12 +27,13 @@ ActiveRecord::Schema.define(version: 2019_05_30_142512) do
   end
 
   create_table "waypoints", force: :cascade do |t|
-    t.decimal "latitude"
-    t.decimal "longitude"
+    t.decimal "latitude", null: false
+    t.decimal "longitude", null: false
     t.text "logbook"
-    t.datetime "date"
+    t.datetime "date", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index ["date"], name: "index_waypoints_on_date", unique: true
   end
 
 end
