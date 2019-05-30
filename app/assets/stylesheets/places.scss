@@ -1,7 +1,12 @@
 // Place all the styles related to the Places controller here.
 // They will automatically be included in application.css.
 // You can use Sass (SCSS) here: http://sass-lang.com/
+html, body {
+  margin: 0;
+  height: 100%;
+}
+
 #map {
-    width: 600px;
-    height: 400px;
+    width: 100%;
+    height: inherit;
 }
