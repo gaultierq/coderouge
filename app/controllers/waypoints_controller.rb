@@ -17,7 +17,7 @@ class WaypointsController < ApplicationController
       puts "this are the params: #{south}  #{west}  #{north}  #{east}"
       sw = Geokit::LatLng.new(south,west)
       ne = Geokit::LatLng.new(north,east)
-      @waypoints = Waypoint.in_bounds([sw, ne]).order(date: :desc).limit(4)
+      @waypoints = Waypoint.in_bounds([sw, ne]).order(date: :desc)
     else
       @waypoints = Waypoint.order(date: :desc).limit(4)
     end

@@ -11,11 +11,17 @@
 
 
     export default {
+        data() {
+            return {
+                waypoints: [],
+            }
+        },
         mounted: function() {
             let text = document.getElementById("map-view").dataset.initial_waypoints;
 
-            let waypoints = JSON.parse(text);
-            this.initMap(waypoints)
+            this.waypoints = JSON.parse(text)
+            this.initMap();
+            this.refreshMap(true)
         },
         methods: {
             fetchWaypoints: function () {
@@ -27,23 +33,55 @@
                         bounds,
                     }
                 })
-                    .then(res => console.log(res))
+                    .then(res => {
+                        console.log(res);
+                        this.waypoints = res.data
+                        this.refreshMap(false)
+                    })
                     .catch(err => console.log(err));
 
             },
-            // will init the map from the last 5 positions
-            initMap: function(lastPositions) {
+            // will init the map
+            initMap: function() {
+                this.map = new google.maps.Map(document.getElementById('map'));
+                let mapChangedJob = null;
 
-                const map = new google.maps.Map(document.getElementById('map'));
+                this.map.addListener('bounds_changed', () => {
+                    if (mapChangedJob) clearTimeout(mapChangedJob);
+                    mapChangedJob = setTimeout(() => {
+                        this.fetchWaypoints()
+                    }, 300)
+                });
+            },
+            refresh_route: function () {
+                if (this.route) {
+                    this.route.setMap(null)
+                }
+
+                let latLngs = this.waypoints.map(wp => new google.maps.LatLng(wp.latitude, wp.longitude));
+
+                this.route = new google.maps.Polyline({
+                    path: latLngs,
+                    geodesic: true,
+                    strokeColor: '#FF0000',
+                    strokeOpacity: 1.0,
+                    strokeWeight: 1
+                });
+
+                this.route.setMap(this.map);
+
+            }, refreshMap: function(fitBounds) {
+                const map = this.map;
+
                 const bounds = new google.maps.LatLngBounds();
                 const infowindow = new google.maps.InfoWindow();
 
                 const latLngs = [];
 
-                const len = lastPositions.length;
+                const len = this.waypoints.length;
                 for (let i = 0; i < len; i++) {
-                    const pos = lastPositions[i];
-                    const latLng = new google.maps.LatLng(pos.latitude, pos.longitude);
+                    const waypoint = this.waypoints[i];
+                    const latLng = new google.maps.LatLng(waypoint.latitude, waypoint.longitude);
                     latLngs.push(latLng);
 
                     const marker = new google.maps.Marker({
@@ -65,28 +103,12 @@
                     })(marker, i));
                 }
 
-                let mapChangedJob = null;
-                map.addListener('center_changed', () => {
-                    if (mapChangedJob) clearTimeout(mapChangedJob);
-                    mapChangedJob = setTimeout(() => {
-                        this.fetchWaypoints()
-                    }, 300)
-                });
+                if (fitBounds) {
+                    //now fit the map to the newly inclusive bounds
+                    map.fitBounds(bounds);
+                }
 
-
-                //now fit the map to the newly inclusive bounds
-                map.fitBounds(bounds);
-
-                const line = new google.maps.Polyline({
-                    path: latLngs,
-                    geodesic: true,
-                    strokeColor: '#FF0000',
-                    strokeOpacity: 1.0,
-                    strokeWeight: 1
-                });
-
-                line.setMap(map);
-                this.map = map
+                this.refresh_route();
             }
         }
 
