@@ -1,9 +1,7 @@
-<% provide :head_tags do %>
-  <script>
-      document.addEventListener("DOMContentLoaded", function(){
-          initMap(<%= @waypoints.to_json.html_safe %>);
-      });
-  </script>
-<% end %>
 
-<div id="map"></div>
+<div id="map-view">
+  <map-view>
+  </map-view>
+</div>
+
+<%= javascript_pack_tag 'waypoints/map'%>
