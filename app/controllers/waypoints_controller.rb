@@ -4,7 +4,7 @@ class WaypointsController < ApplicationController
   # GET /waypoints
   # GET /waypoints.json
   def index
-    @waypoints = Waypoint.all
+    @waypoints = Waypoint.order(date: :desc).limit(4)
   end
 
   # GET /waypoints/1
