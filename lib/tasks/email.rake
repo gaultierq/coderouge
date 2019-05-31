@@ -23,8 +23,6 @@ end
 # ---
 # on a attrapé un thon ! barbeuc !!
 #
-
-
 # convert the body into waypoint
 def parse_waypoint(body)
 
@@ -44,13 +42,33 @@ def parse_waypoint(body)
     wp.latitude = v.to_f if k == 'latitude'
     wp.longitude = v.to_f if k == 'longitude'
     wp.date = Date.parse(v) if k == 'date'
+    if k == 'latlng'
+      lat, lng = v.split(",").map(&:strip)
+      wp.latitude = lat
+      wp.longitude = lng
+    end
   end
 
   logbook = lines.join("\n").chomp.strip
   wp.logbook = logbook unless logbook.empty?
-
-  puts "waypoint:  #{mod_to_s(wp)} " 
   wp
+end
+
+def parse_waypoint_safe(body)
+  begin
+    parse_waypoint(body)
+  rescue Exception
+    puts "Exception raised while processing body '#{body.chomp}'"
+  end
+end
+
+
+def create_waypoints(msg_body)
+  waypoints = msg_body.split('===').map {|b| parse_waypoint_safe(b)}.compact
+  waypoints.each do |w|
+    puts "waypoint saved #{mod_to_s(w)}" if w&.save
+  end
+
 end
 
 task :pull_messages => [:environment] do
@@ -85,15 +103,7 @@ end
 # latitude, longitude, date obligatoires
 task :process_emails => [:environment] do
   Email.all.each do |email|
-    begin
-      waypoint = parse_waypoint(email.body)
-    rescue Exception
-      puts "Exception raised while processing email #{email.id}"
-    end
-
-    if waypoint&.save
-      puts "waypoint saved #{mod_to_s(waypoint)}"
-    end
+    create_waypoints email.body
   end
 end
 
