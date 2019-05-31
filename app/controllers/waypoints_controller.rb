@@ -4,7 +4,31 @@ class WaypointsController < ApplicationController
   # GET /waypoints
   # GET /waypoints.json
   def index
-    @waypoints = Waypoint.order(date: :desc).limit(4)
+    bounds = params.dig(:bounds)
+
+    if bounds
+
+      json_parse = JSON.parse(bounds)
+      south = json_parse["south"]
+      west = json_parse["west"]
+      east = json_parse["east"]
+      north = json_parse["north"]
+
+      puts "this are the params: #{south}  #{west}  #{north}  #{east}"
+      sw = Geokit::LatLng.new(south,west)
+      ne = Geokit::LatLng.new(north,east)
+      @waypoints = Waypoint.in_bounds([sw, ne]).order(date: :desc).limit(4)
+    else
+      @waypoints = Waypoint.order(date: :desc).limit(4)
+    end
+
+
+
+
+    respond_to do |format|
+      format.html
+      format.json { render :index, status: :ok}
+    end
   end
 
   # GET /waypoints/1
@@ -62,13 +86,13 @@ class WaypointsController < ApplicationController
   end
 
   private
-    # Use callbacks to share common setup or constraints between actions.
-    def set_waypoint
-      @waypoint = Waypoint.find(params[:id])
-    end
+  # Use callbacks to share common setup or constraints between actions.
+  def set_waypoint
+    @waypoint = Waypoint.find(params[:id])
+  end
 
-    # Never trust parameters from the scary internet, only allow the white list through.
-    def waypoint_params
-      params.require(:waypoint).permit(:latitude, :longitude, :logbook, :date)
-    end
+  # Never trust parameters from the scary internet, only allow the white list through.
+  def waypoint_params
+    params.require(:waypoint).permit(:latitude, :longitude, :logbook, :date)
+  end
 end

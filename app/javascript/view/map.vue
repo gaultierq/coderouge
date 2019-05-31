@@ -3,20 +3,38 @@
 </template>
 
 <script>
+    import axios from 'axios'
+
+    let token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    axios.defaults.headers.common['X-CSRF-Token'] = token
+    axios.defaults.headers.common['Accept'] = 'application/json'
+
+
     export default {
         mounted: function() {
-            debugger;
             let text = document.getElementById("map-view").dataset.initial_waypoints;
 
             let waypoints = JSON.parse(text);
             this.initMap(waypoints)
         },
         methods: {
+            fetchWaypoints: function () {
+                let bounds = this.map.getBounds();
+                console.log("fetching " + bounds);
+
+                axios.get('/waypoints', {
+                    params: {
+                        bounds,
+                    }
+                })
+                    .then(res => console.log(res))
+                    .catch(err => console.log(err));
+
+            },
             // will init the map from the last 5 positions
-            initMap: lastPositions => {
+            initMap: function(lastPositions) {
 
                 const map = new google.maps.Map(document.getElementById('map'));
-
                 const bounds = new google.maps.LatLngBounds();
                 const infowindow = new google.maps.InfoWindow();
 
@@ -47,6 +65,15 @@
                     })(marker, i));
                 }
 
+                let mapChangedJob = null;
+                map.addListener('center_changed', () => {
+                    if (mapChangedJob) clearTimeout(mapChangedJob);
+                    mapChangedJob = setTimeout(() => {
+                        this.fetchWaypoints()
+                    }, 300)
+                });
+
+
                 //now fit the map to the newly inclusive bounds
                 map.fitBounds(bounds);
 
@@ -59,7 +86,7 @@
                 });
 
                 line.setMap(map);
-
+                this.map = map
             }
         }
 

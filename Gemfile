@@ -64,3 +64,5 @@ gem 'tzinfo-data', platforms: [:mingw, :mswin, :x64_mingw, :jruby]
 gem "mail", "~> 2.7"
 
 gem "webpacker", "~> 4.0"
+
+gem "geokit-rails", "~> 2.3"
