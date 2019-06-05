@@ -49,9 +49,9 @@ class WaypointsController < ApplicationController
   # POST /waypoints.json
   def create
     @waypoint = Waypoint.new(waypoint_params)
-
     respond_to do |format|
       if @waypoint.save
+        FromIndexService.new.perform
         format.html { redirect_to @waypoint, notice: 'Waypoint was successfully created.' }
         format.json { render :show, status: :created, location: @waypoint }
       else

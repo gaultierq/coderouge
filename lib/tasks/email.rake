@@ -105,5 +105,6 @@ task :process_emails => [:environment] do
   Email.all.each do |email|
     create_waypoints email.body
   end
+  FromIndexService.new.perform
 end
 

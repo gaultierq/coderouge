@@ -6,4 +6,7 @@ class Waypoint < ApplicationRecord
   validates :longitude, presence: true
   validates :date, presence: true
   validates :date, uniqueness: true
+
+  has_one :from, :class_name => "Waypoint", foreign_key: 'from_id'
+
 end
