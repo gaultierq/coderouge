@@ -15,6 +15,7 @@
             return {
                 waypoints: {},
                 visibleWaypointsIds: [],
+                segments: [],
             }
         },
         mounted: function() {
@@ -24,11 +25,52 @@
             this.refreshMap(true)
         },
         methods: {
+            makeSegments: function (waypoints) {
+                let result = [];
+                let store = Object.keys(waypoints);
 
-            doStuff: function (data) {
-                let mapped = data.reduce((acc, cur) => ({...acc, [cur.id]: cur}), {})
-                this.waypoints = {...this.waypoints, ...mapped}
-                this.visibleWaypointsIds = data.map(w => w.id)
+                let keys = Object.keys(waypoints);
+                let froms = keys.reduce((acc, val) => ({...acc, [val]: waypoints[val].from_id}), {})
+                let tos = {};
+                for (let k in froms) {
+                    let v = froms[k];
+                    tos[v] = k
+                }
+
+                let getTip = (tipStore, seed) => {
+                    let res1 = [];
+                    {
+                        //left
+                        let currId = seed;
+                        for (;;) {
+                            let fromId = tipStore[currId];
+                            let ix = store.indexOf(fromId);
+                            if (ix < 0) break;
+                            currId = store.splice(ix, 1);
+                            res1.push(currId)
+                        }
+                    }
+                    return res1
+                };
+
+                while (store.length > 0) {
+                    let seed = store.shift();
+                    let lefts = getTip(froms, seed).reverse();
+                    let rights = getTip(tos, seed);
+                    let r = lefts.concat([seed]).concat(rights)
+                    result.push(r);
+                }
+
+                return result
+            }, doStuff: function (data) {
+                let mapped = data.reduce((acc, cur) => ({...acc, [cur.id]: cur}), {});
+                this.waypoints = {...this.waypoints, ...mapped};
+                this.visibleWaypointsIds = data.map(w => w.id);
+
+
+                //array of segments
+                this.segments = this.makeSegments(this.waypoints);
+
             },
             fetchWaypoints: function () {
                 let bounds = this.map.getBounds();
@@ -62,22 +104,21 @@
             visibleWaypoints: function () {
                 return this.visibleWaypointsIds.map(id => this.waypoints[id])
             },
-            refresh_route: function () {
-                if (this.route) {
-                    this.route.setMap(null)
-                }
+            refreshRoutes: function () {
 
-                let latLngs = this.visibleWaypoints().map(wp => new google.maps.LatLng(wp.latitude, wp.longitude));
+                this.segments.forEach(segment => {
+                    let latLngs = segment.map(wpId => this.waypoints[wpId]).map(wp => new google.maps.LatLng(wp.latitude, wp.longitude));
 
-                this.route = new google.maps.Polyline({
-                    path: latLngs,
-                    geodesic: true,
-                    strokeColor: '#FF0000',
-                    strokeOpacity: 1.0,
-                    strokeWeight: 1
+                    let route = new google.maps.Polyline({
+                        path: latLngs,
+                        geodesic: true,
+                        strokeColor: '#FF0000',
+                        strokeOpacity: 1.0,
+                        strokeWeight: 1
+                    });
+
+                    route.setMap(this.map);
                 });
-
-                this.route.setMap(this.map);
 
             }, refreshMap: function(fitBounds) {
                 const map = this.map;
@@ -119,7 +160,7 @@
                     map.fitBounds(bounds);
                 }
 
-                this.refresh_route();
+                this.refreshRoutes();
             }
         }
     }
