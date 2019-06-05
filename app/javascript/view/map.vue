@@ -13,17 +13,23 @@
     export default {
         data() {
             return {
-                waypoints: [],
+                waypoints: {},
+                visibleWaypointsIds: [],
             }
         },
         mounted: function() {
             let text = document.getElementById("map-view").dataset.initial_waypoints;
-
-            this.waypoints = JSON.parse(text)
+            this.doStuff(JSON.parse(text));
             this.initMap();
             this.refreshMap(true)
         },
         methods: {
+
+            doStuff: function (data) {
+                let mapped = data.reduce((acc, cur) => ({...acc, [cur.id]: cur}), {})
+                this.waypoints = {...this.waypoints, ...mapped}
+                this.visibleWaypointsIds = data.map(w => w.id)
+            },
             fetchWaypoints: function () {
                 let bounds = this.map.getBounds();
                 console.log("fetching " + bounds);
@@ -35,7 +41,7 @@
                 })
                     .then(res => {
                         console.log(res);
-                        this.waypoints = res.data
+                        this.doStuff(res.data);
                         this.refreshMap(false)
                     })
                     .catch(err => console.log(err));
@@ -53,12 +59,15 @@
                     }, 300)
                 });
             },
+            visibleWaypoints: function () {
+                return this.visibleWaypointsIds.map(id => this.waypoints[id])
+            },
             refresh_route: function () {
                 if (this.route) {
                     this.route.setMap(null)
                 }
 
-                let latLngs = this.waypoints.map(wp => new google.maps.LatLng(wp.latitude, wp.longitude));
+                let latLngs = this.visibleWaypoints().map(wp => new google.maps.LatLng(wp.latitude, wp.longitude));
 
                 this.route = new google.maps.Polyline({
                     path: latLngs,
@@ -77,9 +86,10 @@
 
                 const latLngs = [];
 
-                const len = this.waypoints.length;
+                let waypoints = this.visibleWaypoints()
+                const len = waypoints.length;
                 for (let i = 0; i < len; i++) {
-                    const waypoint = this.waypoints[i];
+                    const waypoint = waypoints[i];
                     const latLng = new google.maps.LatLng(waypoint.latitude, waypoint.longitude);
                     latLngs.push(latLng);
 
@@ -112,9 +122,6 @@
                 this.refresh_route();
             }
         }
-
     }
-
-
 </script>
 
