@@ -74,7 +74,6 @@
                 const map = this.map;
 
                 const bounds = new google.maps.LatLngBounds();
-                const infowindow = new google.maps.InfoWindow();
 
                 const latLngs = [];
 
@@ -84,9 +83,18 @@
                     const latLng = new google.maps.LatLng(waypoint.latitude, waypoint.longitude);
                     latLngs.push(latLng);
 
+
+                    let infowindow = new google.maps.InfoWindow({
+                        content: waypoint.logbook
+                    });
+
                     const marker = new google.maps.Marker({
                         position: latLng,
                         map: map
+                    });
+
+                    marker.addListener('click', () => {
+                        infowindow.open(map, marker);
                     });
 
                     //extend the bounds to include each marker's position
@@ -94,13 +102,6 @@
                         bounds.extend(marker.position);
                     }
 
-                    //??
-                    google.maps.event.addListener(marker, 'click', (function(marker, i) {
-                        return function() {
-                            infowindow.setContent(locations[i][0]);
-                            infowindow.open(map, marker);
-                        }
-                    })(marker, i));
                 }
 
                 if (fitBounds) {
