@@ -4,9 +4,13 @@
     <title>Coderouge</title>
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
-    <%= javascript_include_tag 'https://maps.googleapis.com/maps/api/js?key='+Rails.application.credentials.google_maps_api_key %>
+
     <%= stylesheet_link_tag    'application', media: 'all', 'data-turbolinks-track': 'reload' %>
     <%= javascript_include_tag 'application', 'data-turbolinks-track': 'reload' %>
+    <
+    <script type="text/javascript" charset="utf-8">
+      var __GOOGLE_MAP_API_KEY__ = "<%=Rails.application.credentials.google_maps_api_key%>";
+    </script>
     <%= yield(:head_tags) %>
   </head>
 

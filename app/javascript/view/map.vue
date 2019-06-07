@@ -1,9 +1,35 @@
 <template>
-    <div id="map"></div>
+    <div id="map">
+        <GmapMap
+                ref="mapRef"
+                :center="{lat:10, lng:10}"
+                map-type-id="terrain"
+                style="width: 100%; height: 400px;"
+        >
+            <gmap-info-window
+                    :options="infoOptions"
+                    :position="infoWindowPos"
+                    :opened="infoWinOpen"
+                    @closeclick="infoWinOpen=false"
+            >
+                {{infoContent}}
+            </gmap-info-window>
+
+            <GmapMarker
+                    :key="index"
+                    v-for="(m, index) in markers"
+                    :position="m.position"
+                    :clickable="true"
+                    @click="toggleInfoWindow(m,index)"
+            ></GmapMarker>
+        </GmapMap>
+    </div>
+
 </template>
 
 <script>
     import axios from 'axios'
+    import {gmapApi} from 'vue2-google-maps'
 
     let token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
     axios.defaults.headers.common['X-CSRF-Token'] = token
@@ -16,15 +42,44 @@
                 waypoints: {},
                 visibleWaypointsIds: [],
                 segments: [],
+                markers: [],
+                infoContent: '',
+                infoWindowPos: null,
+                infoWinOpen: false,
+                currentMidx: null,
+                //optional: offset infowindow so it visually sits nicely on top of our marker
+                infoOptions: {
+                    pixelOffset: {
+                        width: 0,
+                        height: -35
+                    }
+                },
             }
+        },
+        computed: {
+            google: gmapApi
         },
         mounted: function() {
             let text = document.getElementById("map-view").dataset.initial_waypoints;
-            this.doStuff(JSON.parse(text));
+            this.refreshData(JSON.parse(text));
             this.initMap();
-            this.refreshMap(true)
+            this.fitBounds(true);
+            this.refreshRoutes()
         },
         methods: {
+            toggleInfoWindow: function(marker, idx) {
+                this.infoWindowPos = marker.position;
+                this.infoContent = marker.logbook;
+                //check if its the same marker that was selected if yes toggle
+                if (this.currentMidx == idx) {
+                    this.infoWinOpen = !this.infoWinOpen;
+                }
+                //if different marker set infowindow to open and reset current marker index
+                else {
+                    this.infoWinOpen = true;
+                    this.currentMidx = idx;
+                }
+            },
             makeSegments: function (waypoints) {
                 let result = [];
                 let store = Object.keys(waypoints);
@@ -62,10 +117,18 @@
                 }
 
                 return result
-            }, doStuff: function (data) {
+            }, refreshData: function (data) {
                 let mapped = data.reduce((acc, cur) => ({...acc, [cur.id]: cur}), {});
                 this.waypoints = {...this.waypoints, ...mapped};
+                this.markers = Object.values(this.waypoints).map(wp => (
+                        {
+                            position: {lat: parseFloat(wp.latitude), lng: parseFloat(wp.longitude)},
+                            logbook: wp.logbook
+                        }
+                    )
+                );
                 this.visibleWaypointsIds = data.map(w => w.id);
+
 
 
                 //array of segments
@@ -83,15 +146,15 @@
                 })
                     .then(res => {
                         console.log(res);
-                        this.doStuff(res.data);
-                        this.refreshMap(false)
+                        this.refreshData(res.data);
+                        this.refreshRoutes()
                     })
                     .catch(err => console.log(err));
 
             },
             // will init the map
-            initMap: function() {
-                this.map = new google.maps.Map(document.getElementById('map'));
+            initMap: async function() {
+                this.map = await this.$refs.mapRef.$mapPromise;
                 let mapChangedJob = null;
 
                 this.map.addListener('bounds_changed', () => {
@@ -104,12 +167,12 @@
             visibleWaypoints: function () {
                 return this.visibleWaypointsIds.map(id => this.waypoints[id])
             },
-            refreshRoutes: function () {
-
+            refreshRoutes: async function () {
+                (await this.$gmapApiPromiseLazy());
                 this.segments.forEach(segment => {
-                    let latLngs = segment.map(wpId => this.waypoints[wpId]).map(wp => new google.maps.LatLng(wp.latitude, wp.longitude));
+                    let latLngs = segment.map(wpId => this.waypoints[wpId]).map(wp => new this.google.maps.LatLng(wp.latitude, wp.longitude));
 
-                    let route = new google.maps.Polyline({
+                    let route = new this.google.maps.Polyline({
                         path: latLngs,
                         geodesic: true,
                         strokeColor: '#FF0000',
@@ -120,47 +183,35 @@
                     route.setMap(this.map);
                 });
 
-            }, refreshMap: function(fitBounds) {
-                const map = this.map;
-
-                const bounds = new google.maps.LatLngBounds();
+            }, getVisibleBounds: function (map) {
+                const bounds = new this.google.maps.LatLngBounds();
 
                 const latLngs = [];
 
-                let waypoints = this.visibleWaypoints()
-                const len = waypoints.length;
+                let visibWp = this.visibleWaypoints();
+
+                const len = visibWp.length;
                 for (let i = 0; i < len; i++) {
-                    const waypoint = waypoints[i];
-                    const latLng = new google.maps.LatLng(waypoint.latitude, waypoint.longitude);
+                    const wp = visibWp[i];
+                    const latLng = new this.google.maps.LatLng(wp.latitude, wp.longitude);
                     latLngs.push(latLng);
-
-
-                    let infowindow = new google.maps.InfoWindow({
-                        content: waypoint.logbook
-                    });
-
-                    const marker = new google.maps.Marker({
-                        position: latLng,
-                        map: map
-                    });
-
-                    marker.addListener('click', () => {
-                        infowindow.open(map, marker);
-                    });
 
                     //extend the bounds to include each marker's position
                     if (i < len - 1) {
-                        bounds.extend(marker.position);
+                        bounds.extend({lat: parseFloat(wp.latitude), lng: parseFloat(wp.longitude)});
                     }
 
                 }
+                return bounds;
+            },
+            fitBounds: async function() {
 
-                if (fitBounds) {
-                    //now fit the map to the newly inclusive bounds
-                    map.fitBounds(bounds);
-                }
+                (await this.$gmapApiPromiseLazy())
+                const map = await this.$refs.mapRef.$mapPromise;
+                const bounds = this.getVisibleBounds(map);
+                //now fit the map to the newly inclusive bounds
+                map.fitBounds(bounds);
 
-                this.refreshRoutes();
             }
         }
     }
