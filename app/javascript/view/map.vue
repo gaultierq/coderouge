@@ -70,11 +70,9 @@
             // console.log('updated', this)
         },
         mounted: function() {
-            let text = document.getElementById("map-view").dataset.initial_waypoints;
-            let waypoints = JSON.parse(text);
-
-            this.saveData(waypoints);
-            this.adjustBounds(waypoints);
+            this.fetchWaypoints().then((initialWaypoints) => {
+                this.adjustBounds(initialWaypoints);
+            })
         },
         methods: {
             toggleInfoWindow: function(wp, idx) {
@@ -132,48 +130,37 @@
                             .map(wp => new this.google.maps.LatLng(wp.latitude, wp.longitude)));
             },
             extrPosition: function (wp) {
-                return {lat: parseFloat(wp.latitude), lng: parseFloat(wp.longitude)};
+                return {lat: wp.latitude, lng: wp.longitude};
             },
             saveData: function (data) {
                 let mapped = data.reduce((acc, cur) => ({...acc, [cur.id]: cur}), {});
                 this.waypoints = {...this.waypoints, ...mapped};
             },
             fetchWaypoints: function () {
-                let bounds = this.$refs.mapRef.$mapObject.getBounds();
+                let $mapObject = this.$refs.mapRef.$mapObject;
+                let bounds = $mapObject && $mapObject.getBounds();
                 console.log("fetching " + bounds);
 
-                axios.get('/waypoints', {
+                return axios.get('/waypoints', {
                     params: {
                         bounds,
                     }
                 })
                     .then(res => {
-                        console.log(res);
+                        console.log("fetch result:", res);
                         this.saveData(res.data);
                         // this.refreshRoutes()
+                        return res.data
                     })
                     .catch(err => console.log(err));
-
             },
             fetchWaypointsAtTimes: _.debounce(function() {this.fetchWaypoints()}, 300),
             // will init the map
             getVisibleBounds: function (visibWp) {
                 const bounds = new this.google.maps.LatLngBounds();
-
-                const latLngs = [];
-
-                const len = visibWp.length;
-                for (let i = 0; i < len; i++) {
-                    const wp = visibWp[i];
-                    const latLng = new this.google.maps.LatLng(wp.latitude, wp.longitude);
-                    latLngs.push(latLng);
-
-                    //extend the bounds to include each marker's position
-                    if (i < len - 1) {
-                        bounds.extend({lat: parseFloat(wp.latitude), lng: parseFloat(wp.longitude)});
-                    }
-
-                }
+                _.initial(visibWp).forEach(wp => {
+                    bounds.extend({lat: wp.latitude, lng: wp.longitude});
+                });
                 return bounds;
             },
             adjustBounds: async function(waypoints) {
