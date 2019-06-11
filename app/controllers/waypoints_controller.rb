@@ -14,16 +14,17 @@ class WaypointsController < ApplicationController
       east = json_parse["east"]
       north = json_parse["north"]
 
-      puts "this are the params: #{south}  #{west}  #{north}  #{east}"
+      # puts "this are the params: #{south}  #{west}  #{north}  #{east}"
       sw = Geokit::LatLng.new(south,west)
       ne = Geokit::LatLng.new(north,east)
-      @waypoints = Waypoint.in_bounds([sw, ne]).order(date: :desc)
+
+      waypoints = Waypoint.in_bounds([sw, ne]).order(date: :desc).to_a
+
+      # adding the edges
+      @waypoints = waypoints.map {|wp| [wp.to, wp, wp.from]}.reduce(&:concat).uniq.compact
     else
       @waypoints = Waypoint.order(date: :desc).limit(4)
     end
-
-
-
 
     respond_to do |format|
       format.html
