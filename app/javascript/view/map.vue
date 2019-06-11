@@ -3,8 +3,8 @@
         <GmapMap
                 ref="mapRef"
                 :center="{lat:10, lng:10}"
-                map-type-id="terrain"
                 style="width: 100%; height: 400px;"
+                @bounds_changed="fetchWaypointsAtTimes"
         >
             <gmap-info-window
                     :options="infoOptions"
@@ -16,33 +16,37 @@
             </gmap-info-window>
 
             <GmapMarker
-                    :key="index"
-                    v-for="(m, index) in markers"
-                    :position="m.position"
+                    v-for="(wp, index) in waypoints"
+                    :key="wp.id"
+                    :position="extrPosition(wp)"
                     :clickable="true"
-                    @click="toggleInfoWindow(m,index)"
+                    @click="toggleInfoWindow(wp,index)"
             ></GmapMarker>
+
+            <gmap-polyline
+                    v-for="(segment, index) in segments"
+                    v-bind:path.sync="segment"
+                    v-bind:options="{ strokeColor:'#FF0000', strokeOpacity: .5, geodesic: true,}">
+            </gmap-polyline>
         </GmapMap>
     </div>
+
 
 </template>
 
 <script>
     import axios from 'axios'
     import {gmapApi} from 'vue2-google-maps'
+    import _ from 'lodash'
 
     let token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
     axios.defaults.headers.common['X-CSRF-Token'] = token
     axios.defaults.headers.common['Accept'] = 'application/json'
 
-
     export default {
         data() {
             return {
                 waypoints: {},
-                visibleWaypointsIds: [],
-                segments: [],
-                markers: [],
                 infoContent: '',
                 infoWindowPos: null,
                 infoWinOpen: false,
@@ -57,21 +61,27 @@
             }
         },
         computed: {
-            google: gmapApi
+            google: gmapApi,
+            segments: function() {
+                return this.makeSegments(this.waypoints)
+            },
+        },
+        updated: function() {
+            // console.log('updated', this)
         },
         mounted: function() {
             let text = document.getElementById("map-view").dataset.initial_waypoints;
-            this.refreshData(JSON.parse(text));
-            this.initMap();
-            this.fitBounds(true);
-            this.refreshRoutes()
+            let waypoints = JSON.parse(text);
+
+            this.saveData(waypoints);
+            this.adjustBounds(waypoints);
         },
         methods: {
-            toggleInfoWindow: function(marker, idx) {
-                this.infoWindowPos = marker.position;
-                this.infoContent = marker.logbook;
+            toggleInfoWindow: function(wp, idx) {
+                this.infoWindowPos = this.extrPosition(wp);
+                this.infoContent = wp.logbook;
                 //check if its the same marker that was selected if yes toggle
-                if (this.currentMidx == idx) {
+                if (this.currentMidx === idx) {
                     this.infoWinOpen = !this.infoWinOpen;
                 }
                 //if different marker set infowindow to open and reset current marker index
@@ -83,7 +93,6 @@
             makeSegments: function (waypoints) {
                 let result = [];
                 let store = Object.keys(waypoints);
-
                 let keys = Object.keys(waypoints);
                 let froms = keys.reduce((acc, val) => ({...acc, [val]: waypoints[val].from_id}), {})
                 let tos = {};
@@ -112,31 +121,25 @@
                     let seed = store.shift();
                     let lefts = getTip(froms, seed).reverse();
                     let rights = getTip(tos, seed);
-                    let r = lefts.concat([seed]).concat(rights)
+                    let r = lefts.concat([seed]).concat(...rights)
                     result.push(r);
                 }
 
                 return result
-            }, refreshData: function (data) {
+                    .map(wpIds =>
+                        wpIds
+                            .map(wpId => waypoints[wpId])
+                            .map(wp => new this.google.maps.LatLng(wp.latitude, wp.longitude)));
+            },
+            extrPosition: function (wp) {
+                return {lat: parseFloat(wp.latitude), lng: parseFloat(wp.longitude)};
+            },
+            saveData: function (data) {
                 let mapped = data.reduce((acc, cur) => ({...acc, [cur.id]: cur}), {});
                 this.waypoints = {...this.waypoints, ...mapped};
-                this.markers = Object.values(this.waypoints).map(wp => (
-                        {
-                            position: {lat: parseFloat(wp.latitude), lng: parseFloat(wp.longitude)},
-                            logbook: wp.logbook
-                        }
-                    )
-                );
-                this.visibleWaypointsIds = data.map(w => w.id);
-
-
-
-                //array of segments
-                this.segments = this.makeSegments(this.waypoints);
-
             },
             fetchWaypoints: function () {
-                let bounds = this.map.getBounds();
+                let bounds = this.$refs.mapRef.$mapObject.getBounds();
                 console.log("fetching " + bounds);
 
                 axios.get('/waypoints', {
@@ -146,49 +149,18 @@
                 })
                     .then(res => {
                         console.log(res);
-                        this.refreshData(res.data);
-                        this.refreshRoutes()
+                        this.saveData(res.data);
+                        // this.refreshRoutes()
                     })
                     .catch(err => console.log(err));
 
             },
+            fetchWaypointsAtTimes: _.debounce(function() {this.fetchWaypoints()}, 300),
             // will init the map
-            initMap: async function() {
-                this.map = await this.$refs.mapRef.$mapPromise;
-                let mapChangedJob = null;
-
-                this.map.addListener('bounds_changed', () => {
-                    if (mapChangedJob) clearTimeout(mapChangedJob);
-                    mapChangedJob = setTimeout(() => {
-                        this.fetchWaypoints()
-                    }, 300)
-                });
-            },
-            visibleWaypoints: function () {
-                return this.visibleWaypointsIds.map(id => this.waypoints[id])
-            },
-            refreshRoutes: async function () {
-                (await this.$gmapApiPromiseLazy());
-                this.segments.forEach(segment => {
-                    let latLngs = segment.map(wpId => this.waypoints[wpId]).map(wp => new this.google.maps.LatLng(wp.latitude, wp.longitude));
-
-                    let route = new this.google.maps.Polyline({
-                        path: latLngs,
-                        geodesic: true,
-                        strokeColor: '#FF0000',
-                        strokeOpacity: 1.0,
-                        strokeWeight: 1
-                    });
-
-                    route.setMap(this.map);
-                });
-
-            }, getVisibleBounds: function (map) {
+            getVisibleBounds: function (visibWp) {
                 const bounds = new this.google.maps.LatLngBounds();
 
                 const latLngs = [];
-
-                let visibWp = this.visibleWaypoints();
 
                 const len = visibWp.length;
                 for (let i = 0; i < len; i++) {
@@ -204,14 +176,10 @@
                 }
                 return bounds;
             },
-            fitBounds: async function() {
-
-                (await this.$gmapApiPromiseLazy())
+            adjustBounds: async function(waypoints) {
                 const map = await this.$refs.mapRef.$mapPromise;
-                const bounds = this.getVisibleBounds(map);
-                //now fit the map to the newly inclusive bounds
+                const bounds = this.getVisibleBounds(waypoints);
                 map.fitBounds(bounds);
-
             }
         }
     }
