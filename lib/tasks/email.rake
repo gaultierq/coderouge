@@ -66,6 +66,7 @@ end
 def create_waypoints(msg_body)
   waypoints = msg_body.split('===').map {|b| parse_waypoint_safe(b)}.compact
   waypoints.each do |w|
+    puts "trying to save waypoint #{mod_to_s(w)}"
     if w&.save
       puts "waypoint saved #{mod_to_s(w)}"
     else
@@ -115,6 +116,10 @@ task :process_emails => [:environment] do
   Email.all.each do |email|
     create_waypoints email.body
   end
+  FromIndexService.new.perform
+end
+
+task :process_froms => [:environment] do
   FromIndexService.new.perform
 end
 

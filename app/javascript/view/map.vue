@@ -92,12 +92,9 @@
                 let result = [];
                 let store = Object.keys(waypoints).map(Number);
                 let keys = Object.keys(waypoints).map(Number);
-                let froms = keys.reduce((acc, val) => ({...acc, [val]: waypoints[val].from_id}), {})
-                let tos = {};
-                for (let k in froms) {
-                    let v = froms[k];
-                    tos[v] = k
-                }
+
+                let froms = keys.reduce((acc, val) => ({...acc, [val]: waypoints[val].from_id}), {});
+                let tos = keys.reduce((acc, k) => ({...acc, [froms[k]]: k}), {});
 
                 let getTip = (tipStore, seed) => {
                     let res1 = [];
