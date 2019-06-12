@@ -21,6 +21,7 @@
                     :position="extrPosition(wp)"
                     :clickable="true"
                     @click="toggleInfoWindow(wp,index)"
+                    :icon="getIcon(wp)"
             ></GmapMarker>
 
             <gmap-polyline
@@ -75,6 +76,14 @@
             })
         },
         methods: {
+            getIcon(wp) {
+                if (_.isNumber(wp.to)) {
+                    return {
+                        path: google.maps.SymbolPath.CIRCLE,
+                    }
+                }
+                return "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAMAAABg3Am1AAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAABJlBMVEX/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD////17FAzAAAAYHRSTlMACWFNGbYaBXLqQyQv0foNX/bSgP6hiXF7SFv9IDH1BAzb3J6+ogrdjoZBgpH0Hmgr+1GnTCVKlA/zUMlpfHeVxLUQR35Ar3/VzfFJKT5sbYHvxsf4hwbBuA4C6AdPja1b0yJJAAAAAWJLR0RhsrBMhgAAAAlwSFlzAAAOxAAADsQBlSsOGwAAAAd0SU1FB+MGDBc2AufpzDgAAAFsSURBVEjHxdTXUsJAFIDhtWBDQSQooCCiYkGDDbti70ZRmtTz/k8hEBK2Zk5u9Nzu/83OnJ2EkH+YgcEhMuzxjCDz0bFxmCBeAC+un5wC8PnxYDoAADMEDYJau4cQGsx2e5jDgrDZQwQJovNmDws4EIv3+sAiCiSWej0kCQosWz2soEBEs8GqBVIOfWrN7mHdAhubapDu9xC2wNa2UuhxCmRsAEoRonqI9oFK7OzSYI8CCrFP93BAA6nIMhfAIQNk4ggcbpCI4xMWnHJAEBm2Z7YkFWccOBcAK7IaBy5EwIhLroecBNDiigfXMtAXNz4eJKXAFrd8D76EFFjiTgBwLwc98SCCRwUwxZMInlWgK15EoMVUoCMir+J4TfAmOXpXfIIOvxnjQzafAGnpgUHy4Gry5Msd+CZBdyBI9IKbvqATUnQDiu01lcr4vlzqLNZfwfaVH/MpqkYNk9eMqv169Uaz5XGcVrNRJ38zvwM0nY+y9g0BAAAAJXRFWHRkYXRlOmNyZWF0ZQAyMDE5LTA2LTEyVDIxOjU1OjA2KzAyOjAwK5d/owAAACV0RVh0ZGF0ZTptb2RpZnkAMjAxOS0wNi0xMlQyMTo1NDowMiswMjowMEFHiDIAAAAASUVORK5CYII="
+            },
             toggleInfoWindow: function(wp, idx) {
                 this.infoWindowPos = this.extrPosition(wp);
                 this.infoContent = wp.logbook;
