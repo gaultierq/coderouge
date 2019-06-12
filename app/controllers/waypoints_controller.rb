@@ -4,6 +4,10 @@ class WaypointsController < ApplicationController
   # GET /waypoints
   # GET /waypoints.json
   def index
+
+    # let it be iframed
+    response.headers.delete "X-Frame-Options"
+
     bounds = params.dig(:bounds)
 
     if bounds
