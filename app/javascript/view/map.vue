@@ -158,9 +158,13 @@
             // will init the map
             getVisibleBounds: function (visibWp) {
                 const bounds = new this.google.maps.LatLngBounds();
-                _.initial(visibWp).forEach(wp => {
-                    bounds.extend({lat: wp.latitude, lng: wp.longitude});
-                });
+                let i = 0;
+                do {
+                    let wp = _.nth(visibWp, i);
+                    if (wp) {
+                        bounds.extend({lat: wp.latitude, lng: wp.longitude});
+                    }
+                } while (++i < visibWp.length - 1);
                 return bounds;
             },
             adjustBounds: async function(waypoints) {
