@@ -23,7 +23,7 @@ class WaypointsController < ApplicationController
       Rails.logger.info("Waypoints in bounds: #{waypoints}")
 
       # adding the edges
-      @waypoints = waypoints.map {|wp| [wp.to, wp, wp.from]}.reduce(&:concat).uniq.compact
+      @waypoints = waypoints.map {|wp| [wp.to, wp, wp.from]}.reduce([], &:concat).uniq.compact
     else
       @waypoints = Waypoint.order(date: :desc).limit(4)
     end
