@@ -7,7 +7,7 @@ class Waypoint < ApplicationRecord
   validates :date, presence: true
   validates :date, uniqueness: true
 
-  belongs_to :from, :class_name => "Waypoint", foreign_key: 'from_id'
+  belongs_to :from, :class_name => "Waypoint", foreign_key: 'from_id', optional: true
 
   def to
     Waypoint.find_by_from_id(self.id)
