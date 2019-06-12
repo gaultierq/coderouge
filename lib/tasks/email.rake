@@ -108,3 +108,4 @@ task :process_emails => [:environment] do
   FromIndexService.new.perform
 end
 
+

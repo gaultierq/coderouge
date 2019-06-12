@@ -17,11 +17,11 @@ development:
   database: <%= Rails.application.credentials.dig(:postgres, :database, :development) %>
 
 
-production:
-  <<: *default
-  username: <%= Rails.application.credentials.dig(:postgres, :username, :production) %>
-  password: <%= Rails.application.credentials.dig(:postgres, :password, :production) %>
-  database: <%= Rails.application.credentials.dig(:postgres, :database, :production) %>
+#production:
+#  <<: *default
+#  username: <%= Rails.application.credentials.dig(:postgres, :username, :production) %>
+#  password: <%= Rails.application.credentials.dig(:postgres, :password, :production) %>
+#  database: <%= Rails.application.credentials.dig(:postgres, :database, :production) %>
 
 
 # Warning: The database defined as "test" will be erased and
