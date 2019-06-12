@@ -41,7 +41,7 @@ def parse_waypoint(body)
 
     wp.latitude = v.to_f if k == 'latitude'
     wp.longitude = v.to_f if k == 'longitude'
-    wp.date = Date.parse(v) if k == 'date'
+    wp.date = v.to_datetime if k == 'date'
     if k == 'latlng'
       lat, lng = v.split(",").map(&:strip)
       wp.latitude = lat
@@ -66,7 +66,12 @@ end
 def create_waypoints(msg_body)
   waypoints = msg_body.split('===').map {|b| parse_waypoint_safe(b)}.compact
   waypoints.each do |w|
-    puts "waypoint saved #{mod_to_s(w)}" if w&.save
+    if w&.save
+      puts "waypoint saved #{mod_to_s(w)}"
+    else
+      puts "waypoint NOT saved #{mod_to_s(w)}"
+    end
+
   end
 
 end

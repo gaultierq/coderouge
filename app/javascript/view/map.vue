@@ -90,8 +90,8 @@
             },
             makeSegments: function (waypoints) {
                 let result = [];
-                let store = Object.keys(waypoints);
-                let keys = Object.keys(waypoints);
+                let store = Object.keys(waypoints).map(Number);
+                let keys = Object.keys(waypoints).map(Number);
                 let froms = keys.reduce((acc, val) => ({...acc, [val]: waypoints[val].from_id}), {})
                 let tos = {};
                 for (let k in froms) {

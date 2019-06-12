@@ -66,3 +66,5 @@ gem "mail", "~> 2.7"
 gem "webpacker", "~> 4.0"
 
 gem "geokit-rails", "~> 2.3"
+
+gem 'dotenv-rails', groups: [:development, :test]
