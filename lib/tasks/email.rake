@@ -72,13 +72,18 @@ def create_waypoints(msg_body)
 end
 
 task :pull_messages => [:environment] do
-  puts "Receving emails..."
+  username = Rails.application.credentials.dig(:geopos_email, :user_name, Rails.env.to_sym)
+  password = Rails.application.credentials.dig(:geopos_email, :password, Rails.env.to_sym)
+  puts "Receving emails for #{username}..."
+
   Mail.defaults do
+
+
     retriever_method :imap,
                      :address    => "imap.coderouge.ovh",
                      :port       => 993,
-                     :user_name  => Rails.application.credentials.dig(:geopos_email, :user_name),
-                     :password   => Rails.application.credentials.dig(:geopos_email, :password),
+                     :user_name  => username,
+                     :password   => password,
                      :enable_ssl => true
   end
 
