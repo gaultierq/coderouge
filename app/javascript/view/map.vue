@@ -77,7 +77,7 @@
         },
         methods: {
             getIcon(wp) {
-                if (_.isNumber(wp.to)) {
+                if (_.isNumber(wp.to_id)) {
                     return {
                         path: google.maps.SymbolPath.CIRCLE,
                     }
@@ -86,7 +86,7 @@
             },
             toggleInfoWindow: function(wp, idx) {
                 this.infoWindowPos = this.extrPosition(wp);
-                this.infoContent = wp.logbook;
+                this.infoContent = `[${wp.id}] ${wp.logbook}`;
                 //check if its the same marker that was selected if yes toggle
                 if (this.currentMidx === idx) {
                     this.infoWinOpen = !this.infoWinOpen;

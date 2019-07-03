@@ -1,4 +1,7 @@
 class WaypointsController < ApplicationController
+
+  protect_from_forgery with: :null_session
+
   before_action :set_waypoint, only: [:show, :edit, :update, :destroy]
 
   # GET /waypoints
@@ -86,6 +89,7 @@ class WaypointsController < ApplicationController
   # DELETE /waypoints/1.json
   def destroy
     @waypoint.destroy
+    FromIndexService.new.perform
     respond_to do |format|
       format.html { redirect_to waypoints_url, notice: 'Waypoint was successfully destroyed.' }
       format.json { head :no_content }
