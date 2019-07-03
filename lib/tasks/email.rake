@@ -63,18 +63,15 @@ def parse_waypoint_safe(body)
 end
 
 
+# db transaction
 def create_waypoints(msg_body)
   waypoints = msg_body.split('===').map {|b| parse_waypoint_safe(b)}.compact
-  waypoints.each do |w|
-    puts "trying to save waypoint #{mod_to_s(w)}"
-    if w&.save
-      puts "waypoint saved #{mod_to_s(w)}"
-    else
-      puts "waypoint NOT saved #{mod_to_s(w)}"
+
+  ActiveRecord::Base.transaction do
+    waypoints.each do |w|
+      w&.save!
     end
-
   end
-
 end
 
 task :pull_messages => [:environment] do
@@ -109,18 +106,18 @@ task :pull_messages => [:environment] do
 
 end
 
-
 # indexer date : 1 waypoint par date !
 # latitude, longitude, date obligatoires
 task :process_emails => [:environment] do
   Email.all.each do |email|
-    create_waypoints email.body
+    begin
+      create_waypoints email.body
+      email.destroy
+    rescue Exception => e
+      puts "Exception raised while processing email #{email.id}'#{e}'"
+    end
   end
-  FromIndexService.new.perform
 end
 
-task :process_froms => [:environment] do
-  FromIndexService.new.perform
-end
 
 
