@@ -3,7 +3,7 @@
         <GmapMap
                 ref="mapRef"
                 :center="{lat:10, lng:10}"
-                style="width: 100%; height: 400px;"
+                style="width: 100%; height: 380px;"
                 @bounds_changed="fetchWaypointsAtTimes"
         >
             <gmap-info-window
