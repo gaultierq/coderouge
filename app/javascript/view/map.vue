@@ -12,7 +12,7 @@
                     :opened="infoWinOpen"
                     @closeclick="infoWinOpen=false"
             >
-                {{infoContent}}
+                <div v-html="infoContent"></div>
             </gmap-info-window>
 
             <GmapMarker
@@ -32,17 +32,24 @@
         </GmapMap>
     </div>
 
-
 </template>
 
 <script>
     import axios from 'axios'
     import {gmapApi} from 'vue2-google-maps'
     import _ from 'lodash'
+    import TimeAgo from 'javascript-time-ago'
+    // Load locale-specific relative date/time formatting rules.
+    import fr from 'javascript-time-ago/locale/en'
 
     let token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
     axios.defaults.headers.common['X-CSRF-Token'] = token
     axios.defaults.headers.common['Accept'] = 'application/json'
+
+    // Add locale-specific relative date/time formatting rules.
+    TimeAgo.addLocale(fr)
+    // Create relative date/time formatter.
+    const timeAgo = new TimeAgo('fr-FR')
 
     export default {
         data() {
@@ -73,6 +80,11 @@
         mounted: function() {
             this.fetchWaypoints().then((initialWaypoints) => {
                 this.adjustBounds(initialWaypoints);
+                let wp = _.first(initialWaypoints);
+                if (wp) {
+                    this.toggleInfoWindow(wp, wp.id)
+                }
+
             })
         },
         methods: {
@@ -84,9 +96,19 @@
                 }
                 return "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAMAAABg3Am1AAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAABJlBMVEX/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD////17FAzAAAAYHRSTlMACWFNGbYaBXLqQyQv0foNX/bSgP6hiXF7SFv9IDH1BAzb3J6+ogrdjoZBgpH0Hmgr+1GnTCVKlA/zUMlpfHeVxLUQR35Ar3/VzfFJKT5sbYHvxsf4hwbBuA4C6AdPja1b0yJJAAAAAWJLR0RhsrBMhgAAAAlwSFlzAAAOxAAADsQBlSsOGwAAAAd0SU1FB+MGDBc2AufpzDgAAAFsSURBVEjHxdTXUsJAFIDhtWBDQSQooCCiYkGDDbti70ZRmtTz/k8hEBK2Zk5u9Nzu/83OnJ2EkH+YgcEhMuzxjCDz0bFxmCBeAC+un5wC8PnxYDoAADMEDYJau4cQGsx2e5jDgrDZQwQJovNmDws4EIv3+sAiCiSWej0kCQosWz2soEBEs8GqBVIOfWrN7mHdAhubapDu9xC2wNa2UuhxCmRsAEoRonqI9oFK7OzSYI8CCrFP93BAA6nIMhfAIQNk4ggcbpCI4xMWnHJAEBm2Z7YkFWccOBcAK7IaBy5EwIhLroecBNDiigfXMtAXNz4eJKXAFrd8D76EFFjiTgBwLwc98SCCRwUwxZMInlWgK15EoMVUoCMir+J4TfAmOXpXfIIOvxnjQzafAGnpgUHy4Gry5Msd+CZBdyBI9IKbvqATUnQDiu01lcr4vlzqLNZfwfaVH/MpqkYNk9eMqv169Uaz5XGcVrNRJ38zvwM0nY+y9g0BAAAAJXRFWHRkYXRlOmNyZWF0ZQAyMDE5LTA2LTEyVDIxOjU1OjA2KzAyOjAwK5d/owAAACV0RVh0ZGF0ZTptb2RpZnkAMjAxOS0wNi0xMlQyMTo1NDowMiswMjowMEFHiDIAAAAASUVORK5CYII="
             },
+            getInfoContent: function (wp) {
+                return `<p>
+                            <b>${this.niceDate(new Date(wp.date))}</b><br>
+                            ${this.agoDate(new Date(wp.date))}
+                        <\p>
+                        <p>
+                            ${wp.logbook || ""}
+                            <br>#${wp.id}
+                            </p>`;
+            },
             toggleInfoWindow: function(wp, idx) {
                 this.infoWindowPos = this.extrPosition(wp);
-                this.infoContent = `[${wp.id}] ${wp.logbook}`;
+                this.infoContent = this.getInfoContent(wp);
                 //check if its the same marker that was selected if yes toggle
                 if (this.currentMidx === idx) {
                     this.infoWinOpen = !this.infoWinOpen;
@@ -141,6 +163,14 @@
             saveData: function (data) {
                 let mapped = data.reduce((acc, cur) => ({...acc, [cur.id]: cur}), {});
                 this.waypoints = {...this.waypoints, ...mapped};
+            },
+            niceDate: function (date) {
+                const months = ["JAN", "FEB", "MAR","APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+                let formatted_date = date.getDate() + "-" + months[date.getMonth()] + "-" + date.getFullYear()
+                return formatted_date
+            },
+            agoDate: function (date) {
+                return timeAgo.format(date)
             },
             fetchWaypoints: function () {
                 let $mapObject = this.$refs.mapRef.$mapObject;
