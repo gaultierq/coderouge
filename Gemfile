@@ -68,3 +68,4 @@ gem "webpacker", "~> 4.0"
 gem "geokit-rails", "~> 2.3"
 
 gem 'dotenv-rails', groups: [:development, :test]
+gem "polylines", "~> 0.3.0"

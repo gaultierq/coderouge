@@ -24,11 +24,16 @@
                     :icon="getIcon(wp)"
             ></GmapMarker>
 
+            <!--<gmap-polyline-->
+                    <!--v-for="(segment, index) in segments"-->
+                    <!--v-bind:path.sync="segment"-->
+                    <!--v-bind:options="{ strokeColor:'#FF0000', strokeOpacity: 1, geodesic: true,}">-->
+            <!--</gmap-polyline>-->
             <gmap-polyline
-                    v-for="(segment, index) in segments"
-                    v-bind:path.sync="segment"
-                    v-bind:options="{ strokeColor:'#FF0000', strokeOpacity: .5, geodesic: true,}">
+                    v-bind:path.sync="polyline"
+                    v-bind:options="{ strokeColor:'#ff0000', strokeOpacity: 0.5, geodesic: true,}">
             </gmap-polyline>
+
         </GmapMap>
     </div>
 
@@ -55,6 +60,7 @@
         data() {
             return {
                 waypoints: {},
+                encodedPolyline: null,
                 infoContent: '',
                 infoWindowPos: null,
                 infoWinOpen: false,
@@ -70,9 +76,12 @@
         },
         computed: {
             google: gmapApi,
-            segments: function() {
-                return this.makeSegments(this.waypoints)
-            },
+            // segments: function() {
+            //     return this.makeSegments(this.waypoints)
+            // },
+            polyline: function() {
+                return this.decodePolyline(this.encodedPolyline)
+            }
         },
         updated: function() {
             // console.log('updated', this)
@@ -91,7 +100,7 @@
             getIcon(wp) {
                 if (_.isNumber(wp.to_id)) {
                     return {
-                        path: google.maps.SymbolPath.CIRCLE,
+                        path: this.google.maps.SymbolPath.CIRCLE,
                     }
                 }
                 return "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAMAAABg3Am1AAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAABJlBMVEX/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD////17FAzAAAAYHRSTlMACWFNGbYaBXLqQyQv0foNX/bSgP6hiXF7SFv9IDH1BAzb3J6+ogrdjoZBgpH0Hmgr+1GnTCVKlA/zUMlpfHeVxLUQR35Ar3/VzfFJKT5sbYHvxsf4hwbBuA4C6AdPja1b0yJJAAAAAWJLR0RhsrBMhgAAAAlwSFlzAAAOxAAADsQBlSsOGwAAAAd0SU1FB+MGDBc2AufpzDgAAAFsSURBVEjHxdTXUsJAFIDhtWBDQSQooCCiYkGDDbti70ZRmtTz/k8hEBK2Zk5u9Nzu/83OnJ2EkH+YgcEhMuzxjCDz0bFxmCBeAC+un5wC8PnxYDoAADMEDYJau4cQGsx2e5jDgrDZQwQJovNmDws4EIv3+sAiCiSWej0kCQosWz2soEBEs8GqBVIOfWrN7mHdAhubapDu9xC2wNa2UuhxCmRsAEoRonqI9oFK7OzSYI8CCrFP93BAA6nIMhfAIQNk4ggcbpCI4xMWnHJAEBm2Z7YkFWccOBcAK7IaBy5EwIhLroecBNDiigfXMtAXNz4eJKXAFrd8D76EFFjiTgBwLwc98SCCRwUwxZMInlWgK15EoMVUoCMir+J4TfAmOXpXfIIOvxnjQzafAGnpgUHy4Gry5Msd+CZBdyBI9IKbvqATUnQDiu01lcr4vlzqLNZfwfaVH/MpqkYNk9eMqv169Uaz5XGcVrNRJ38zvwM0nY+y9g0BAAAAJXRFWHRkYXRlOmNyZWF0ZQAyMDE5LTA2LTEyVDIxOjU1OjA2KzAyOjAwK5d/owAAACV0RVh0ZGF0ZTptb2RpZnkAMjAxOS0wNi0xMlQyMTo1NDowMiswMjowMEFHiDIAAAAASUVORK5CYII="
@@ -106,6 +115,14 @@
                             <br>#${wp.id}
                             </p>`;
             },
+            decodePolyline(encoded) {
+
+                if (!this.google) return null;
+                let decoded = this.google.maps.geometry.encoding.decodePath(encoded);
+                console.log("hi: " + decoded)
+                debugger;
+                return decoded
+            },
             toggleInfoWindow: function(wp, idx) {
                 this.infoWindowPos = this.extrPosition(wp);
                 this.infoContent = this.getInfoContent(wp);
@@ -119,44 +136,44 @@
                     this.currentMidx = idx;
                 }
             },
-            makeSegments: function (waypoints) {
-                let result = [];
-                let store = Object.keys(waypoints).map(Number);
-                let keys = Object.keys(waypoints).map(Number);
-
-                let froms = keys.reduce((acc, val) => ({...acc, [val]: waypoints[val].from_id}), {});
-                let tos = keys.reduce((acc, k) => ({...acc, [froms[k]]: k}), {});
-
-                let getTip = (tipStore, seed) => {
-                    let res1 = [];
-                    {
-                        //left
-                        let currId = seed;
-                        for (;;) {
-                            let fromId = tipStore[currId];
-                            let ix = store.indexOf(fromId);
-                            if (ix < 0) break;
-                            currId = store.splice(ix, 1);
-                            res1.push(currId)
-                        }
-                    }
-                    return res1
-                };
-
-                while (store.length > 0) {
-                    let seed = store.shift();
-                    let lefts = getTip(froms, seed).reverse();
-                    let rights = getTip(tos, seed);
-                    let r = lefts.concat([seed]).concat(...rights)
-                    result.push(r);
-                }
-
-                return result
-                    .map(wpIds =>
-                        wpIds
-                            .map(wpId => waypoints[wpId])
-                            .map(wp => new this.google.maps.LatLng(wp.latitude, wp.longitude)));
-            },
+            // makeSegments: function (waypoints) {
+            //     let result = [];
+            //     let store = Object.keys(waypoints).map(Number);
+            //     let keys = Object.keys(waypoints).map(Number);
+            //
+            //     let froms = keys.reduce((acc, val) => ({...acc, [val]: waypoints[val].from_id}), {});
+            //     let tos = keys.reduce((acc, k) => ({...acc, [froms[k]]: k}), {});
+            //
+            //     let getTip = (tipStore, seed) => {
+            //         let res1 = [];
+            //         {
+            //             //left
+            //             let currId = seed;
+            //             for (;;) {
+            //                 let fromId = tipStore[currId];
+            //                 let ix = store.indexOf(fromId);
+            //                 if (ix < 0) break;
+            //                 currId = store.splice(ix, 1);
+            //                 res1.push(currId)
+            //             }
+            //         }
+            //         return res1
+            //     };
+            //
+            //     while (store.length > 0) {
+            //         let seed = store.shift();
+            //         let lefts = getTip(froms, seed).reverse();
+            //         let rights = getTip(tos, seed);
+            //         let r = lefts.concat([seed]).concat(...rights)
+            //         result.push(r);
+            //     }
+            //
+            //     return result
+            //         .map(wpIds =>
+            //             wpIds
+            //                 .map(wpId => waypoints[wpId])
+            //                 .map(wp => new this.google.maps.LatLng(wp.latitude, wp.longitude)));
+            // },
             extrPosition: function (wp) {
                 return {lat: wp.latitude, lng: wp.longitude};
             },
@@ -176,6 +193,14 @@
                 let $mapObject = this.$refs.mapRef.$mapObject;
                 let bounds = $mapObject && $mapObject.getBounds();
                 console.log("fetching " + bounds);
+
+                axios.get('/waypoints/polyline', {
+                    params: {
+                        bounds,
+                    }
+                }).then(res => {
+                    this.encodedPolyline = res.data
+                }).catch(err => console.log(err));
 
                 return axios.get('/waypoints', {
                     params: {

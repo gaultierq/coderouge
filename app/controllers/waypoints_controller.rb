@@ -11,34 +11,27 @@ class WaypointsController < ApplicationController
     # let it be iframed
     response.headers.delete "X-Frame-Options"
 
-    bounds = params.dig(:bounds)
-
-    if bounds
-
-      json_parse = JSON.parse(bounds)
-      south = json_parse["south"]
-      west = json_parse["west"]
-      east = json_parse["east"]
-      north = json_parse["north"]
-
-      # puts "this are the params: #{south}  #{west}  #{north}  #{east}"
-      sw = Geokit::LatLng.new(south,west)
-      ne = Geokit::LatLng.new(north,east)
-
-      waypoints = Waypoint.in_bounds([sw, ne]).order(date: :desc).to_a
-
-      Rails.logger.info("Waypoints in bounds: #{waypoints}")
-
-      # adding the edges
-      @waypoints = waypoints.map {|wp| [wp.to, wp, wp.from]}.reduce([], &:concat).uniq.compact
-    else
-      @waypoints = Waypoint.order(date: :desc).limit(4)
-    end
+    obtain_waypoints
 
     respond_to do |format|
       format.html
       format.json { render :index, status: :ok}
     end
+  end
+
+  def polyline
+    # let it be iframed
+    response.headers.delete "X-Frame-Options"
+
+    obtain_waypoints
+
+    latlngs = @waypoints.map {|w| [w.latitude, w.longitude]}
+
+    encoded = Polylines::Encoder.encode_points(latlngs)
+    Rails.logger.info("polyline input: #{encoded}")
+
+    render plain: encoded
+
   end
 
   # GET /waypoints/1
@@ -97,6 +90,32 @@ class WaypointsController < ApplicationController
   end
 
   private
+  def obtain_waypoints
+    bounds = params.dig(:bounds)
+
+    if bounds
+
+      json_parse = JSON.parse(bounds)
+      south = json_parse["south"]
+      west = json_parse["west"]
+      east = json_parse["east"]
+      north = json_parse["north"]
+
+      # puts "this are the params: #{south}  #{west}  #{north}  #{east}"
+      sw = Geokit::LatLng.new(south, west)
+      ne = Geokit::LatLng.new(north, east)
+
+      waypoints = Waypoint.in_bounds([sw, ne]).order(date: :desc).to_a
+
+      Rails.logger.info("Waypoints in bounds: #{waypoints}")
+
+      # adding the edges
+      @waypoints = waypoints.map {|wp| [wp.to, wp, wp.from]}.reduce([], &:concat).uniq.compact
+    else
+      @waypoints = Waypoint.order(date: :desc).limit(4)
+    end
+  end
+
   # Use callbacks to share common setup or constraints between actions.
   def set_waypoint
     @waypoint = Waypoint.find(params[:id])
