@@ -15,20 +15,23 @@
                 <div v-html="infoContent"></div>
             </gmap-info-window>
 
+            <!-- current position -->
             <GmapMarker
-                    v-for="(wp, index) in waypoints"
-                    :key="wp.id"
-                    :position="extrPosition(wp)"
-                    :clickable="true"
-                    @click="toggleInfoWindow(wp,index)"
-                    :icon="getIcon(wp)"
+                    v-if="this.last_waypoint"
+                    :position="extrPosition(this.last_waypoint)"
+                    :clickable="false"
+                    :icon="getBoatIcon()"
             ></GmapMarker>
 
-            <!--<gmap-polyline-->
-                    <!--v-for="(segment, index) in segments"-->
-                    <!--v-bind:path.sync="segment"-->
-                    <!--v-bind:options="{ strokeColor:'#FF0000', strokeOpacity: 1, geodesic: true,}">-->
-            <!--</gmap-polyline>-->
+            <!-- stopovers -->
+            <GmapMarker
+                    v-for="(so, index) in stopovers"
+                    :key="index"
+                    :position="extrPosition(so)"
+                    :clickable="false"
+                    :icon="getStopoverIcon(so)"
+            ></GmapMarker>
+
             <gmap-polyline
                     v-bind:path.sync="polyline"
                     v-bind:options="{ strokeColor:'#ff0000', strokeOpacity: 0.5, geodesic: true,}">
@@ -52,15 +55,17 @@
     axios.defaults.headers.common['Accept'] = 'application/json'
 
     // Add locale-specific relative date/time formatting rules.
-    TimeAgo.addLocale(fr)
+    TimeAgo.addLocale(fr);
     // Create relative date/time formatter.
-    const timeAgo = new TimeAgo('fr-FR')
+    const timeAgo = new TimeAgo('fr-FR');
+    const DAY_S = 24 * 3600;
 
     export default {
         data() {
             return {
-                waypoints: {},
+                last_waypoint: null,
                 encodedPolyline: null,
+                stopovers: [],
                 infoContent: '',
                 infoWindowPos: null,
                 infoWinOpen: false,
@@ -81,29 +86,57 @@
             // },
             polyline: function() {
                 return this.decodePolyline(this.encodedPolyline)
-            }
+            },
         },
         updated: function() {
             // console.log('updated', this)
         },
         mounted: function() {
+            this.fetchStopovers();
             this.fetchWaypoints().then((initialWaypoints) => {
                 this.adjustBounds(initialWaypoints);
-                let wp = _.first(initialWaypoints);
-                if (wp) {
+                this.last_waypoint = _.first(initialWaypoints);
+                if (this.last_waypoint) {
                     this.toggleInfoWindow(wp, wp.id)
                 }
 
             })
         },
         methods: {
-            getIcon(wp) {
-                if (_.isNumber(wp.to_id)) {
-                    return {
-                        path: this.google.maps.SymbolPath.CIRCLE,
-                    }
-                }
+            getBoatIcon() {
                 return "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAMAAABg3Am1AAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAABJlBMVEX/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD////17FAzAAAAYHRSTlMACWFNGbYaBXLqQyQv0foNX/bSgP6hiXF7SFv9IDH1BAzb3J6+ogrdjoZBgpH0Hmgr+1GnTCVKlA/zUMlpfHeVxLUQR35Ar3/VzfFJKT5sbYHvxsf4hwbBuA4C6AdPja1b0yJJAAAAAWJLR0RhsrBMhgAAAAlwSFlzAAAOxAAADsQBlSsOGwAAAAd0SU1FB+MGDBc2AufpzDgAAAFsSURBVEjHxdTXUsJAFIDhtWBDQSQooCCiYkGDDbti70ZRmtTz/k8hEBK2Zk5u9Nzu/83OnJ2EkH+YgcEhMuzxjCDz0bFxmCBeAC+un5wC8PnxYDoAADMEDYJau4cQGsx2e5jDgrDZQwQJovNmDws4EIv3+sAiCiSWej0kCQosWz2soEBEs8GqBVIOfWrN7mHdAhubapDu9xC2wNa2UuhxCmRsAEoRonqI9oFK7OzSYI8CCrFP93BAA6nIMhfAIQNk4ggcbpCI4xMWnHJAEBm2Z7YkFWccOBcAK7IaBy5EwIhLroecBNDiigfXMtAXNz4eJKXAFrd8D76EFFjiTgBwLwc98SCCRwUwxZMInlWgK15EoMVUoCMir+J4TfAmOXpXfIIOvxnjQzafAGnpgUHy4Gry5Msd+CZBdyBI9IKbvqATUnQDiu01lcr4vlzqLNZfwfaVH/MpqkYNk9eMqv169Uaz5XGcVrNRJ38zvwM0nY+y9g0BAAAAJXRFWHRkYXRlOmNyZWF0ZQAyMDE5LTA2LTEyVDIxOjU1OjA2KzAyOjAwK5d/owAAACV0RVh0ZGF0ZTptb2RpZnkAMjAxOS0wNi0xMlQyMTo1NDowMiswMjowMEFHiDIAAAAASUVORK5CYII="
+            },
+            getStopoverIcon(so) {
+                let scale = 0;
+                if (so.duration_s > 15 * DAY_S) {
+                    scale = 20
+                }
+                else if (so.duration_s > 7 * DAY_S) {
+                    scale = 10
+                }
+                else if (so.duration_s > 3 * DAY_S) {
+                    scale = 5
+                }
+                else if (so.duration_s > 1 * DAY_S) {
+                    scale = 3
+                }
+                else {
+                    scale = 1
+                }
+
+                // var symbolThree = {
+                //     path: 'M -2,-2 2,2 M 2,-2 -2,2',
+                //     strokeColor: 'red',
+                //     strokeWeight: 4,
+                //     scale
+                // };
+                // return symbolThree
+                return {
+                    path: this.google.maps.SymbolPath.CIRCLE,
+                    strokeColor: 'red',
+                    strokeWeight: 4,
+                    scale
+                }
             },
             getInfoContent: function (wp) {
                 return `<p>
@@ -116,12 +149,8 @@
                             </p>`;
             },
             decodePolyline(encoded) {
-
-                if (!this.google) return null;
-                let decoded = this.google.maps.geometry.encoding.decodePath(encoded);
-                console.log("hi: " + decoded)
-                debugger;
-                return decoded
+                if (!this.google || !encoded || !this.google.maps.geometry) return null;
+                return this.google.maps.geometry.encoding.decodePath(encoded);
             },
             toggleInfoWindow: function(wp, idx) {
                 this.infoWindowPos = this.extrPosition(wp);
@@ -136,50 +165,12 @@
                     this.currentMidx = idx;
                 }
             },
-            // makeSegments: function (waypoints) {
-            //     let result = [];
-            //     let store = Object.keys(waypoints).map(Number);
-            //     let keys = Object.keys(waypoints).map(Number);
-            //
-            //     let froms = keys.reduce((acc, val) => ({...acc, [val]: waypoints[val].from_id}), {});
-            //     let tos = keys.reduce((acc, k) => ({...acc, [froms[k]]: k}), {});
-            //
-            //     let getTip = (tipStore, seed) => {
-            //         let res1 = [];
-            //         {
-            //             //left
-            //             let currId = seed;
-            //             for (;;) {
-            //                 let fromId = tipStore[currId];
-            //                 let ix = store.indexOf(fromId);
-            //                 if (ix < 0) break;
-            //                 currId = store.splice(ix, 1);
-            //                 res1.push(currId)
-            //             }
-            //         }
-            //         return res1
-            //     };
-            //
-            //     while (store.length > 0) {
-            //         let seed = store.shift();
-            //         let lefts = getTip(froms, seed).reverse();
-            //         let rights = getTip(tos, seed);
-            //         let r = lefts.concat([seed]).concat(...rights)
-            //         result.push(r);
-            //     }
-            //
-            //     return result
-            //         .map(wpIds =>
-            //             wpIds
-            //                 .map(wpId => waypoints[wpId])
-            //                 .map(wp => new this.google.maps.LatLng(wp.latitude, wp.longitude)));
-            // },
             extrPosition: function (wp) {
                 return {lat: wp.latitude, lng: wp.longitude};
             },
             saveData: function (data) {
                 let mapped = data.reduce((acc, cur) => ({...acc, [cur.id]: cur}), {});
-                this.waypoints = {...this.waypoints, ...mapped};
+                // this.waypoints = {...this.waypoints, ...mapped};
             },
             niceDate: function (date) {
                 const months = ["JAN", "FEB", "MAR","APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
@@ -189,11 +180,18 @@
             agoDate: function (date) {
                 return timeAgo.format(date)
             },
+            fetchStopovers: function () {
+                //fetching the stopovers
+                axios.get('/stopovers').then(res => {
+                    this.stopovers = res.data
+                }).catch(err => console.log(err));
+            },
             fetchWaypoints: function () {
                 let $mapObject = this.$refs.mapRef.$mapObject;
                 let bounds = $mapObject && $mapObject.getBounds();
                 console.log("fetching " + bounds);
 
+                //fetching the polyline
                 axios.get('/waypoints/polyline', {
                     params: {
                         bounds,
