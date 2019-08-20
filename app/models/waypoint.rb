@@ -9,6 +9,9 @@ class Waypoint < ApplicationRecord
 
   belongs_to :from, :class_name => "Waypoint", foreign_key: 'from_id', optional: true
 
+  scope :by_date, -> { order('date ASC, id DESC') }
+
+
   def from
     Waypoint.where("date < ?", date).order(date: :asc).last
   end
