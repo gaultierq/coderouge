@@ -1,4 +1,4 @@
-json.extract! stopover, :latitude, :longitude, :start_date, :end_date
-json.latitude waypoint.latitude.to_f
-json.longitude waypoint.longitude.to_f
-
+json.extract! stopover, :latitude, :longitude
+json.latitude stopover.latitude.to_f
+json.longitude stopover.longitude.to_f
+json.duration_s  stopover.to_date - stopover.from_date

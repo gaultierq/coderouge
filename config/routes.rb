@@ -6,6 +6,8 @@ Rails.application.routes.draw do
 
   end
 
+  resources :stopovers
+
   root 'waypoints#index'
 
 
