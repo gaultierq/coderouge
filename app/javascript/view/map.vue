@@ -4,7 +4,6 @@
                 ref="mapRef"
                 :center="{lat:10, lng:10}"
                 style="width: 100%; height: 350px;"
-                @bounds_changed="debouncedFetchPoly"
         >
             <gmap-info-window
                     :options="infoOptions"
@@ -93,15 +92,17 @@
         },
         mounted: function() {
             this.fetchStopovers();
-            this.fetchPoly();
-            this.fetchWaypoints().then((initialWaypoints) => {
-                this.adjustBounds(initialWaypoints);
-                this.last_waypoint = _.first(initialWaypoints);
-                if (this.last_waypoint) {
-                    this.toggleInfoWindow(wp, wp.id)
-                }
+            this.fetchPoly().then(poly => {
+                this.adjustBounds(poly);
+            });
+            this.fetchWaypoints()
+                .then(initialWaypoints => {
+                    this.last_waypoint = _.first(initialWaypoints);
+                    if (this.last_waypoint) {
+                        this.toggleInfoWindow(this.last_waypoint, this.last_waypoint.id)
+                    }
 
-            })
+                })
         },
         methods: {
             getBoatIcon() {
@@ -125,17 +126,12 @@
                     scale = 1
                 }
 
-                // var symbolThree = {
-                //     path: 'M -2,-2 2,2 M 2,-2 -2,2',
-                //     strokeColor: 'red',
-                //     strokeWeight: 4,
-                //     scale
-                // };
-                // return symbolThree
                 return {
                     path: this.google.maps.SymbolPath.CIRCLE,
                     strokeColor: 'red',
                     strokeWeight: 4,
+                    strokeOpacity: 0.4,
+                    strokeWidth: 5,
                     scale
                 }
             },
@@ -189,16 +185,24 @@
             },
             fetchPoly: function () {
                 let $mapObject = this.$refs.mapRef.$mapObject;
-                let bounds = $mapObject && $mapObject.getBounds();
-                console.log("fetching " + bounds);
+                // let bounds = $mapObject && $mapObject.getBounds();
+                // console.log("fetching " + bounds);
 
                 //fetching the polyline
+                let bounds = {
+                    "south": -90,
+                    "west": -180,
+                    "north": 90,
+                    "east": 180
+                };
                 return axios.get('/waypoints/polyline', {
-                    params: {
-                        bounds,
+                        params: {
+                            bounds
+                        }
                     }
-                }).then(res => {
-                    this.encodedPolyline = res.data
+                ).then(res => {
+                    this.encodedPolyline = res.data;
+                    return this.decodePolyline(res.data);
                 }).catch(err => console.log(err));
             },
             fetchWaypoints: function () {
@@ -228,7 +232,8 @@
                 do {
                     let wp = _.nth(visibWp, i);
                     if (wp) {
-                        bounds.extend({lat: wp.latitude, lng: wp.longitude});
+                        // bounds.extend({lat: wp.latitude, lng: wp.longitude});
+                        bounds.extend(wp);
                     }
                 } while (++i < visibWp.length - 1);
                 return bounds;
