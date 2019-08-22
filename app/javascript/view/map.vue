@@ -4,7 +4,7 @@
                 ref="mapRef"
                 :center="{lat:10, lng:10}"
                 style="width: 100%; height: 350px;"
-                @bounds_changed="fetchWaypointsAtTimes"
+                @bounds_changed="debouncedFetchPoly"
         >
             <gmap-info-window
                     :options="infoOptions"
@@ -93,6 +93,7 @@
         },
         mounted: function() {
             this.fetchStopovers();
+            this.fetchPoly();
             this.fetchWaypoints().then((initialWaypoints) => {
                 this.adjustBounds(initialWaypoints);
                 this.last_waypoint = _.first(initialWaypoints);
@@ -186,19 +187,25 @@
                     this.stopovers = res.data
                 }).catch(err => console.log(err));
             },
-            fetchWaypoints: function () {
+            fetchPoly: function () {
                 let $mapObject = this.$refs.mapRef.$mapObject;
                 let bounds = $mapObject && $mapObject.getBounds();
                 console.log("fetching " + bounds);
 
                 //fetching the polyline
-                axios.get('/waypoints/polyline', {
+                return axios.get('/waypoints/polyline', {
                     params: {
                         bounds,
                     }
                 }).then(res => {
                     this.encodedPolyline = res.data
                 }).catch(err => console.log(err));
+            },
+            fetchWaypoints: function () {
+                let $mapObject = this.$refs.mapRef.$mapObject;
+                let bounds = $mapObject && $mapObject.getBounds();
+                console.log("fetching " + bounds);
+
 
                 return axios.get('/waypoints', {
                     params: {
@@ -213,7 +220,7 @@
                     })
                     .catch(err => console.log(err));
             },
-            fetchWaypointsAtTimes: _.debounce(function() {this.fetchWaypoints()}, 300),
+            debouncedFetchPoly: _.debounce(function() {this.fetchPoly()}, 300),
             // will init the map
             getVisibleBounds: function (visibWp) {
                 const bounds = new this.google.maps.LatLngBounds();
