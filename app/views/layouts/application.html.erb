@@ -10,6 +10,8 @@
 
     <script type="text/javascript" charset="utf-8">
       var __GOOGLE_MAP_API_KEY__ = "<%=Rails.application.credentials.google_maps_api_key%>";
+      var __FLAG_PNG__ = "<%= image_url('red_flag1.png') %>";
+      var __BOAT_SVG__ = "<%= image_url('boat.svg') %>";
     </script>
     <%= yield(:head_tags) %>
   </head>

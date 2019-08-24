@@ -4,6 +4,7 @@
                 ref="mapRef"
                 :center="{lat:10, lng:10}"
                 style="width: 100%; height: 350px;"
+                mapTypeId="terrain"
         >
             <gmap-info-window
                     :options="infoOptions"
@@ -98,42 +99,57 @@
             this.fetchWaypoints()
                 .then(initialWaypoints => {
                     this.last_waypoint = _.first(initialWaypoints);
-                    if (this.last_waypoint) {
-                        this.toggleInfoWindow(this.last_waypoint, this.last_waypoint.id)
-                    }
-
+                    // if (this.last_waypoint) {
+                    //     this.toggleInfoWindow(this.last_waypoint, this.last_waypoint.id)
+                    // }
                 })
         },
         methods: {
             getBoatIcon() {
-                return "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAMAAABg3Am1AAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAABJlBMVEX/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD/AAD////17FAzAAAAYHRSTlMACWFNGbYaBXLqQyQv0foNX/bSgP6hiXF7SFv9IDH1BAzb3J6+ogrdjoZBgpH0Hmgr+1GnTCVKlA/zUMlpfHeVxLUQR35Ar3/VzfFJKT5sbYHvxsf4hwbBuA4C6AdPja1b0yJJAAAAAWJLR0RhsrBMhgAAAAlwSFlzAAAOxAAADsQBlSsOGwAAAAd0SU1FB+MGDBc2AufpzDgAAAFsSURBVEjHxdTXUsJAFIDhtWBDQSQooCCiYkGDDbti70ZRmtTz/k8hEBK2Zk5u9Nzu/83OnJ2EkH+YgcEhMuzxjCDz0bFxmCBeAC+un5wC8PnxYDoAADMEDYJau4cQGsx2e5jDgrDZQwQJovNmDws4EIv3+sAiCiSWej0kCQosWz2soEBEs8GqBVIOfWrN7mHdAhubapDu9xC2wNa2UuhxCmRsAEoRonqI9oFK7OzSYI8CCrFP93BAA6nIMhfAIQNk4ggcbpCI4xMWnHJAEBm2Z7YkFWccOBcAK7IaBy5EwIhLroecBNDiigfXMtAXNz4eJKXAFrd8D76EFFjiTgBwLwc98SCCRwUwxZMInlWgK15EoMVUoCMir+J4TfAmOXpXfIIOvxnjQzafAGnpgUHy4Gry5Msd+CZBdyBI9IKbvqATUnQDiu01lcr4vlzqLNZfwfaVH/MpqkYNk9eMqv169Uaz5XGcVrNRJ38zvwM0nY+y9g0BAAAAJXRFWHRkYXRlOmNyZWF0ZQAyMDE5LTA2LTEyVDIxOjU1OjA2KzAyOjAwK5d/owAAACV0RVh0ZGF0ZTptb2RpZnkAMjAxOS0wNi0xMlQyMTo1NDowMiswMjowMEFHiDIAAAAASUVORK5CYII="
+                return {
+                    url: __BOAT_SVG__,
+                    scaledSize: new google.maps.Size(60, 60),
+                    origin: new google.maps.Point(0,0), // origin
+                    anchor: new google.maps.Point(30, 55) // anchor
+                };
             },
             getStopoverIcon(so) {
-                let scale = 0;
-                if (so.duration_s > 15 * DAY_S) {
-                    scale = 20
-                }
-                else if (so.duration_s > 7 * DAY_S) {
-                    scale = 10
-                }
-                else if (so.duration_s > 3 * DAY_S) {
-                    scale = 5
-                }
-                else if (so.duration_s > 1 * DAY_S) {
-                    scale = 3
-                }
-                else {
-                    scale = 1
-                }
-
                 return {
-                    path: this.google.maps.SymbolPath.CIRCLE,
-                    strokeColor: 'red',
-                    strokeWeight: 4,
-                    strokeOpacity: 0.4,
-                    strokeWidth: 5,
-                    scale
-                }
+                    url: __FLAG_PNG__,
+                    scaledSize: new google.maps.Size(20, 20),
+                    origin: new google.maps.Point(0,0), // origin
+                    anchor: new google.maps.Point(5, 20) // anchor
+                };
+                // let scale = 0;
+                // if (so.duration_s > 15 * DAY_S) {
+                //     scale = 20
+                // }
+                // else if (so.duration_s > 7 * DAY_S) {
+                //     scale = 10
+                // }
+                // else if (so.duration_s > 3 * DAY_S) {
+                //     scale = 5
+                // }
+                // else if (so.duration_s > 1 * DAY_S) {
+                //     scale = 3
+                // }
+                // else {
+                //     scale = 1
+                // }
+                // scale /= 50.;
+                // scale = 0.0171875;
+                //
+                //
+                // var hi = "M2425 9544 c-64 -33 -102 -88 -141 -204 -18 -53 -19 -175 -22 -3662 l-2 -3608 97 0 c54 0 162 -3 241 -7 l142 -6 1 1009 c1 901 9 1434 19 1204 4 -110 5 -118 29 -203 32 -117 70 -160 107 -123 8 9 19 16 23 16 4 0 29 21 55 46 103 98 244 185 382 234 81 28 245 70 419 106 11 2 34 7 50 11 17 4 32 7 35 8 3 1 25 5 50 9 70 13 397 90 595 141 99 25 190 48 201 50 12 3 51 14 85 24 56 17 101 29 134 36 23 6 133 38 170 50 45 14 155 47 170 51 87 20 753 249 895 308 36 15 72 29 80 31 14 3 211 82 423 169 97 39 278 118 372 162 33 15 63 28 66 28 13 2 496 230 764 361 205 101 649 330 825 427 36 19 121 66 190 103 659 359 886 499 1015 630 120 122 101 171 -81 208 -12 2 -30 0 -40 -6 -13 -6 -16 -6 -9 0 6 6 208 131 450 278 242 147 446 273 454 280 10 10 11 20 2 47 l-11 34 -198 -23 c-419 -48 -897 -87 -1427 -115 -302 -16 -1345 -16 -1635 0 -1252 68 -2218 228 -3044 503 -666 222 -1164 496 -1535 845 l-81 76 0 92 c0 174 -57 320 -145 371 -49 29 -124 33 -170 9z";
+                // return {
+                //     path: hi, //this.google.maps.SymbolPath.CIRCLE,
+                //     // anchor: new google.maps.Point(200, 400),
+                //     strokeColor: 'red',
+                //     strokeWeight: 2,
+                //     // strokeOpacity: 0.6,
+                //     strokeWidth: 5,
+                //     scale
+                // }
             },
             getInfoContent: function (wp) {
                 return `<p>
