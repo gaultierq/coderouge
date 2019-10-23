@@ -23,12 +23,23 @@ class WaypointsController < ApplicationController
     # let it be iframed
     response.headers.delete "X-Frame-Options"
 
-    obtain_waypoints
+    bounds = params.dig(:bounds)
 
-    latlngs = @waypoints.map {|w| [w.latitude, w.longitude]}
+    redis_key = "cached_encoded_polyline:#{bounds}"
+    encoded = REDIS.get(redis_key) unless bounds.nil?
 
-    encoded = Polylines::Encoder.encode_points(latlngs)
-    Rails.logger.info("polyline input: #{encoded}")
+    if encoded
+      Rails.logger.info("cache: encoded polyline hit: " + encoded)
+    else
+      Rails.logger.info("cache: encoded polyline not found. Constructing...")
+
+      obtain_waypoints
+      latlngs = @waypoints.map {|w| [w.latitude, w.longitude]}
+      encoded = Polylines::Encoder.encode_points(latlngs)
+
+      REDIS.set(redis_key, encoded)
+      Rails.logger.info("polyline input: #{encoded}")
+    end
 
     render plain: encoded
 
@@ -55,6 +66,7 @@ class WaypointsController < ApplicationController
     respond_to do |format|
       if @waypoint.save
         FromIndexService.new.perform
+        REDIS.flushall
         format.html { redirect_to @waypoint, notice: 'Waypoint was successfully created.' }
         format.json { render :show, status: :created, location: @waypoint }
       else
@@ -69,6 +81,7 @@ class WaypointsController < ApplicationController
   def update
     respond_to do |format|
       if @waypoint.update(waypoint_params)
+        REDIS.flushall
         format.html { redirect_to @waypoint, notice: 'Waypoint was successfully updated.' }
         format.json { render :show, status: :ok, location: @waypoint }
       else
@@ -83,6 +96,7 @@ class WaypointsController < ApplicationController
   def destroy
     @waypoint.destroy
     FromIndexService.new.perform
+    REDIS.flushall
     respond_to do |format|
       format.html { redirect_to waypoints_url, notice: 'Waypoint was successfully destroyed.' }
       format.json { head :no_content }

@@ -2,10 +2,12 @@ import Vue from 'vue/dist/vue.js';
 import MapView from 'view/map';
 import * as VueGoogleMaps from 'vue2-google-maps'
 
+
+
 Vue.use(VueGoogleMaps, {
     load: {
         key: __GOOGLE_MAP_API_KEY__,
-        libraries: 'places', // This is required if you use the Autocomplete plugin
+        libraries: 'places,geometry', // This is required if you use the Autocomplete plugin
         // OR: libraries: 'places,drawing'
         // OR: libraries: 'places,drawing,visualization'
         // (as you require)

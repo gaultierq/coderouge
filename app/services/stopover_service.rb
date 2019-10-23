@@ -14,7 +14,7 @@ class StopoverService
         date_diff = w.date - last_waypoint.date
         raise "order is not good" if date_diff < 0
         current_speed = dist / date_diff * 3600
-        puts "#{w.id} speed: #{current_speed}nm/h"
+        # puts "#{w.id} speed: #{current_speed}nm/h"
         if current_speed < 0 || current_speed > 15
           puts "ignoring waypoint=#{w.id}, last wp=#{last_waypoint.id}"
           suspicious = true

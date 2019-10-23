@@ -92,33 +92,38 @@
             // console.log('updated', this)
         },
         mounted: function() {
-            this.fetchStopovers();
-            this.fetchPoly().then(poly => {
-                this.adjustBounds(poly);
-            });
-            this.fetchWaypoints()
-                .then(initialWaypoints => {
-                    this.last_waypoint = _.first(initialWaypoints);
-                    // if (this.last_waypoint) {
-                    //     this.toggleInfoWindow(this.last_waypoint, this.last_waypoint.id)
-                    // }
-                })
+            this.$refs.mapRef.$mapPromise.then(() => {
+                this.fetchStopovers();
+                this.fetchPoly().then(poly => {
+                    this.adjustBounds(poly);
+                });
+                this.fetchWaypoints()
+                    .then(initialWaypoints => {
+                        this.last_waypoint = _.first(initialWaypoints);
+                        // if (this.last_waypoint) {
+                        //     this.toggleInfoWindow(this.last_waypoint, this.last_waypoint.id)
+                        // }
+                    })
+            })
+
         },
         methods: {
             getBoatIcon() {
+                if (!this.google) return null;
                 return {
                     url: __BOAT_SVG__,
-                    scaledSize: new google.maps.Size(60, 60),
-                    origin: new google.maps.Point(0,0), // origin
-                    anchor: new google.maps.Point(30, 55) // anchor
+                    scaledSize: new this.google.maps.Size(60, 60),
+                    origin: new this.google.maps.Point(0,0), // origin
+                    anchor: new this.google.maps.Point(30, 55) // anchor
                 };
             },
             getStopoverIcon(so) {
+                if (!this.google) return null;
                 return {
                     url: __FLAG_PNG__,
-                    scaledSize: new google.maps.Size(20, 20),
-                    origin: new google.maps.Point(0,0), // origin
-                    anchor: new google.maps.Point(5, 20) // anchor
+                    scaledSize: new this.google.maps.Size(20, 20),
+                    origin: new this.google.maps.Point(0,0), // origin
+                    anchor: new this.google.maps.Point(5, 20) // anchor
                 };
                 // let scale = 0;
                 // if (so.duration_s > 15 * DAY_S) {
@@ -162,7 +167,7 @@
                             </p>`;
             },
             decodePolyline(encoded) {
-                if (!this.google || !encoded || !this.google.maps.geometry) return null;
+                if (!this.google || !encoded || !this.google.maps.geometry) return [];
                 return this.google.maps.geometry.encoding.decodePath(encoded);
             },
             toggleInfoWindow: function(wp, idx) {
@@ -201,8 +206,6 @@
             },
             fetchPoly: function () {
                 let $mapObject = this.$refs.mapRef.$mapObject;
-                // let bounds = $mapObject && $mapObject.getBounds();
-                // console.log("fetching " + bounds);
 
                 //fetching the polyline
                 let bounds = {

@@ -72,6 +72,7 @@ def create_waypoints(msg_body)
       w&.save!
     end
   end
+  REDIS.flushall
 end
 
 task :pull_messages => [:environment] do
