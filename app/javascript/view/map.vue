@@ -36,8 +36,8 @@
                     v-bind:path.sync="polyline"
                     v-bind:options="{ strokeColor:'#ff0000', strokeOpacity: 0.5, geodesic: true,}">
             </gmap-polyline>
-
         </GmapMap>
+
     </div>
 
 </template>
@@ -97,12 +97,9 @@
                 this.fetchPoly().then(poly => {
                     this.adjustBounds(poly);
                 });
-                this.fetchWaypoints()
-                    .then(initialWaypoints => {
-                        this.last_waypoint = _.first(initialWaypoints);
-                        // if (this.last_waypoint) {
-                        //     this.toggleInfoWindow(this.last_waypoint, this.last_waypoint.id)
-                        // }
+                this.fetchLastPosition()
+                    .then(last => {
+                        this.last_waypoint = last;
                     })
             })
 
@@ -125,36 +122,6 @@
                     origin: new this.google.maps.Point(0,0), // origin
                     anchor: new this.google.maps.Point(5, 20) // anchor
                 };
-                // let scale = 0;
-                // if (so.duration_s > 15 * DAY_S) {
-                //     scale = 20
-                // }
-                // else if (so.duration_s > 7 * DAY_S) {
-                //     scale = 10
-                // }
-                // else if (so.duration_s > 3 * DAY_S) {
-                //     scale = 5
-                // }
-                // else if (so.duration_s > 1 * DAY_S) {
-                //     scale = 3
-                // }
-                // else {
-                //     scale = 1
-                // }
-                // scale /= 50.;
-                // scale = 0.0171875;
-                //
-                //
-                // var hi = "M2425 9544 c-64 -33 -102 -88 -141 -204 -18 -53 -19 -175 -22 -3662 l-2 -3608 97 0 c54 0 162 -3 241 -7 l142 -6 1 1009 c1 901 9 1434 19 1204 4 -110 5 -118 29 -203 32 -117 70 -160 107 -123 8 9 19 16 23 16 4 0 29 21 55 46 103 98 244 185 382 234 81 28 245 70 419 106 11 2 34 7 50 11 17 4 32 7 35 8 3 1 25 5 50 9 70 13 397 90 595 141 99 25 190 48 201 50 12 3 51 14 85 24 56 17 101 29 134 36 23 6 133 38 170 50 45 14 155 47 170 51 87 20 753 249 895 308 36 15 72 29 80 31 14 3 211 82 423 169 97 39 278 118 372 162 33 15 63 28 66 28 13 2 496 230 764 361 205 101 649 330 825 427 36 19 121 66 190 103 659 359 886 499 1015 630 120 122 101 171 -81 208 -12 2 -30 0 -40 -6 -13 -6 -16 -6 -9 0 6 6 208 131 450 278 242 147 446 273 454 280 10 10 11 20 2 47 l-11 34 -198 -23 c-419 -48 -897 -87 -1427 -115 -302 -16 -1345 -16 -1635 0 -1252 68 -2218 228 -3044 503 -666 222 -1164 496 -1535 845 l-81 76 0 92 c0 174 -57 320 -145 371 -49 29 -124 33 -170 9z";
-                // return {
-                //     path: hi, //this.google.maps.SymbolPath.CIRCLE,
-                //     // anchor: new google.maps.Point(200, 400),
-                //     strokeColor: 'red',
-                //     strokeWeight: 2,
-                //     // strokeOpacity: 0.6,
-                //     strokeWidth: 5,
-                //     scale
-                // }
             },
             getInfoContent: function (wp) {
                 return `<p>
@@ -205,8 +172,7 @@
                 }).catch(err => console.log(err));
             },
             fetchPoly: function () {
-                let $mapObject = this.$refs.mapRef.$mapObject;
-
+                // let $mapObject = this.$refs.mapRef.$mapObject;
                 //fetching the polyline
                 let bounds = {
                     "south": -90,
@@ -224,23 +190,9 @@
                     return this.decodePolyline(res.data);
                 }).catch(err => console.log(err));
             },
-            fetchWaypoints: function () {
-                let $mapObject = this.$refs.mapRef.$mapObject;
-                let bounds = $mapObject && $mapObject.getBounds();
-                console.log("fetching " + bounds);
-
-
-                return axios.get('/waypoints', {
-                    params: {
-                        bounds,
-                    }
-                })
-                    .then(res => {
-                        console.log("fetch result:", res);
-                        this.saveData(res.data);
-                        // this.refreshRoutes()
-                        return res.data
-                    })
+            fetchLastPosition: function () {
+                return axios.get('/waypoints/last_position')
+                    .then(res => res.data)
                     .catch(err => console.log(err));
             },
             debouncedFetchPoly: _.debounce(function() {this.fetchPoly()}, 300),

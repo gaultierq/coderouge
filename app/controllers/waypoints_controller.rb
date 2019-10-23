@@ -19,6 +19,11 @@ class WaypointsController < ApplicationController
     end
   end
 
+  def last_position
+    @waypoint = Waypoint.order("date").last
+    render "waypoints/show.json"
+  end
+
   def polyline
     # let it be iframed
     response.headers.delete "X-Frame-Options"
@@ -43,6 +48,37 @@ class WaypointsController < ApplicationController
 
     render plain: encoded
 
+  end
+
+  def infos
+    info = {
+        total_nm: total_nm
+    }
+    render json: info
+  end
+
+  def total_nm
+    total = 0
+    last_waypoint = nil
+
+    Waypoint.order(:date).each do |w|
+
+      if last_waypoint
+        dist = last_waypoint.distance_to(w)
+        date_diff = w.date - last_waypoint.date
+        raise "order is not good" if date_diff < 0
+        current_speed = dist / date_diff * 3600
+        # puts "#{w.id} speed: #{current_speed}nm/h"
+        if current_speed < 0 || current_speed > 15
+          puts "ignoring waypoint=#{w.id}, last wp=#{last_waypoint.id}"
+          suspicious = true
+        else
+          total = total + dist
+        end
+      end
+      last_waypoint = w unless suspicious
+    end
+    total
   end
 
   # GET /waypoints/1
