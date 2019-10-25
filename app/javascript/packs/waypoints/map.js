@@ -1,8 +1,24 @@
 import Vue from 'vue/dist/vue.js';
-import MapView from 'view/map';
 import * as VueGoogleMaps from 'vue2-google-maps'
 
+import axios from 'axios'
+let token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+axios.defaults.headers.common['X-CSRF-Token'] = token
+axios.defaults.headers.common['Accept'] = 'application/json'
+window.axios = axios
 
+
+
+import TimeAgo from 'javascript-time-ago'
+// Load locale-specific relative date/time formatting rules.
+import fr from 'javascript-time-ago/locale/en'
+// Add locale-specific relative date/time formatting rules.
+TimeAgo.addLocale(fr);
+window.timeAgo = new TimeAgo('fr-FR');
+
+import MapView from 'view/map';
+import Info from 'view/info';
+Vue.component('info', Info)
 
 Vue.use(VueGoogleMaps, {
     load: {
@@ -31,8 +47,10 @@ Vue.use(VueGoogleMaps, {
 
 new Vue({
     el: '#map-view', //exact
+
+    //registering components
     components: {
-        'map-view': MapView //exact
+        'map-view': MapView,
     }
 });
 

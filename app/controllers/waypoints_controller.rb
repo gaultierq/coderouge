@@ -52,9 +52,14 @@ class WaypointsController < ApplicationController
 
   def infos
     info = {
-        total_nm: total_nm
+        total_nm: total_nm,
+        last_update: last_update
     }
     render json: info
+  end
+
+  def last_update
+    Waypoint.order(:date).last.date
   end
 
   def total_nm

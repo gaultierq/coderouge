@@ -1,10 +1,19 @@
 <template>
     <div id="map">
+        <info style='position: absolute; z-index: 1000; margin: 1%;'></info>
         <GmapMap
                 ref="mapRef"
                 :center="{lat:10, lng:10}"
                 style="width: 100%; height: 350px;"
                 mapTypeId="terrain"
+                :options="{
+                          zoomControl: true,
+                          mapTypeControl: false,
+                          scaleControl: false,
+                          streetViewControl: false,
+                          rotateControl: false,
+                          fullscreenControl: false,
+                        }"
         >
             <gmap-info-window
                     :options="infoOptions"
@@ -39,26 +48,17 @@
             </gmap-polyline>
         </GmapMap>
 
+
     </div>
 
 </template>
 
 <script>
-    import axios from 'axios'
+
     import {gmapApi} from 'vue2-google-maps'
     import _ from 'lodash'
-    import TimeAgo from 'javascript-time-ago'
-    // Load locale-specific relative date/time formatting rules.
-    import fr from 'javascript-time-ago/locale/en'
 
-    let token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-    axios.defaults.headers.common['X-CSRF-Token'] = token
-    axios.defaults.headers.common['Accept'] = 'application/json'
-
-    // Add locale-specific relative date/time formatting rules.
-    TimeAgo.addLocale(fr);
     // Create relative date/time formatter.
-    const timeAgo = new TimeAgo('fr-FR');
     const DAY_S = 24 * 3600;
 
     export default {
