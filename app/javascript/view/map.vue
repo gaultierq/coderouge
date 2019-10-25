@@ -25,6 +25,7 @@
 
             <!-- stopovers -->
             <GmapMarker
+                    v-if="zoom > 3"
                     v-for="(so, index) in stopovers"
                     :key="index"
                     :position="extrPosition(so)"
@@ -63,6 +64,7 @@
     export default {
         data() {
             return {
+                zoom: 2,
                 last_waypoint: null,
                 encodedPolyline: null,
                 stopovers: [],
@@ -93,6 +95,11 @@
         },
         mounted: function() {
             this.$refs.mapRef.$mapPromise.then(() => {
+
+                this.$refs.mapRef.$on('zoom_changed', zoom => {
+                    this.zoom = zoom
+                });
+
                 this.fetchStopovers();
                 this.fetchPoly().then(poly => {
                     this.adjustBounds(poly);
@@ -115,7 +122,6 @@
                 };
             },
             getStopoverIcon(so) {
-                if (!this.google) return null;
                 return {
                     url: __FLAG_PNG__,
                     scaledSize: new this.google.maps.Size(20, 20),
@@ -152,10 +158,6 @@
             },
             extrPosition: function (wp) {
                 return {lat: wp.latitude, lng: wp.longitude};
-            },
-            saveData: function (data) {
-                let mapped = data.reduce((acc, cur) => ({...acc, [cur.id]: cur}), {});
-                // this.waypoints = {...this.waypoints, ...mapped};
             },
             niceDate: function (date) {
                 const months = ["JAN", "FEB", "MAR","APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
